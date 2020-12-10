@@ -5,9 +5,10 @@ def pretty_message(self, path_prefix: Optional[str]) -> str:
 
     :returns: A pretty message
     """
-    output = f"* [{super().producingTarget}] {self.testCaseName} -> {super().message}"
+    # pylint: disable=no-member
+    output = f"* [{self.producingTarget}] {self.testCaseName} -> {self.message}"
 
-    documentLocationInCreatingWorkspace = super().documentLocationInCreatingWorkspace
+    documentLocationInCreatingWorkspace = self.documentLocationInCreatingWorkspace
 
     if (
         documentLocationInCreatingWorkspace is None
@@ -24,3 +25,4 @@ def pretty_message(self, path_prefix: Optional[str]) -> str:
         output
         + f"\n  Found in {relative_path}:{documentLocationInCreatingWorkspace.starting_line_number}:{documentLocationInCreatingWorkspace.starting_column_number}"
     )
+    # pylint: enable=no-member

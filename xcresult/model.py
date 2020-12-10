@@ -697,9 +697,10 @@ class TestFailureIssueSummary(IssueSummary):
 
         :returns: A pretty message
         """
-        output = f"* [{super().producingTarget}] {self.testCaseName} -> {super().message}"
+        # pylint: disable=no-member
+        output = f"* [{self.producingTarget}] {self.testCaseName} -> {self.message}"
 
-        documentLocationInCreatingWorkspace = super().documentLocationInCreatingWorkspace
+        documentLocationInCreatingWorkspace = self.documentLocationInCreatingWorkspace
 
         if (
             documentLocationInCreatingWorkspace is None
@@ -716,6 +717,7 @@ class TestFailureIssueSummary(IssueSummary):
             output
             + f"\n  Found in {relative_path}:{documentLocationInCreatingWorkspace.starting_line_number}:{documentLocationInCreatingWorkspace.starting_column_number}"
         )
+        # pylint: enable=no-member
 
 
 class ActionTestActivitySummary(XcresultObject):
