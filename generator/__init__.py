@@ -1,5 +1,6 @@
 """A module for generating xcresult models."""
 
+import os
 import subprocess
 from typing import List, Optional, Tuple
 
@@ -134,6 +135,19 @@ class Definition:
             python_type, annotations = xctype.python_type(name, self.name)
             output = annotations + output
             output.append(f"    {name}: {python_type}")
+
+        additional_methods_path = os.path.join(
+            os.path.dirname(os.path.abspath(__file__)), "additional_methods", f"{self.name}.py"
+        )
+        if os.path.exists(additional_methods_path):
+            output.append("")
+            with open(additional_methods_path) as additional_methods_file:
+                for line in additional_methods_file.readlines():
+                    stripped = line.rstrip()
+                    if len(stripped) > 0:
+                        output.append("    " + line.rstrip())
+                    else:
+                        output.append("")
 
         return output
 

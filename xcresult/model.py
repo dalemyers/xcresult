@@ -75,6 +75,70 @@ class DocumentLocation(XcresultObject):
     url: str
     concreteTypeName: str
 
+    @staticmethod
+    def empty() -> "DocumentLocation":
+        """Create a new "empty" instance
+
+        :returns: A new instance
+        """
+        instance = DocumentLocation.__new__(DocumentLocation)
+        instance.concreteTypeName = ""
+        instance.url = "file://#CharacterRangeLen=0&EndingColumnNumber=0&EndingLineNumber=0&StartingColumnNumber=0&StartingLineNumber=0"
+        return instance
+
+    @property
+    def path(self) -> str:
+        return self.url.split("#")[0].replace("file://", "")
+
+    @property
+    def location(self) -> str:
+        return self.url.split("#")[1]
+
+    @property
+    def location_details(self) -> str:
+        return urllib.parse.parse_qs(self.location)
+
+    def _get_property(self, key: str, *, offset: int = 0) -> Optional[int]:
+        """Get a property from the location details.
+
+        :param key: The key for the property
+        :param offset: Any offset to apply to the value (if found)
+
+        :returns: The property as an int value if found, None otherwise
+        """
+        value = self.location_details.get(key)
+        if value is None:
+            return None
+        return int(value[0]) + offset
+
+    @property
+    def character_range_length(self) -> int:
+        return int(self.location_details["CharacterRangeLen"][0]) + 1
+
+    @property
+    def character_range_location(self) -> Optional[int]:
+        return self._get_property("CharacterRangeLoc")
+
+    @property
+    def ending_column_number(self) -> Optional[int]:
+        return self._get_property("EndingColumnNumber", offset=1)
+
+    @property
+    def ending_line_number(self) -> Optional[int]:
+        return self._get_property("EndingLineNumber", offset=1)
+
+    @property
+    def location_encoding(self) -> Optional[int]:
+        return self._get_property("LocationEncoding")
+
+    @property
+    def starting_column_number(self) -> Optional[int]:
+        return self._get_property("StartingColumnNumber", offset=1)
+
+    @property
+    def starting_line_number(self) -> Optional[int]:
+        return self._get_property("StartingLineNumber", offset=1)
+
 
 # Defined Type: Double
 
@@ -361,6 +425,23 @@ class IssueSummary(XcresultObject):
     producingTarget: Optional[str]
     documentLocationInCreatingWorkspace: Optional[DocumentLocation]
 
+    def pretty_message(self, path_prefix: Optional[str]) -> str:
+        """Format the message nicely for review.
+
+        :param path_prefix: Any path prefix to remove
+
+        :returns: A pretty message
+        """
+        if self.documentLocationInCreatingWorkspace is None:
+            return f"* [{self.level.value.upper()}] " + self.message
+
+        relative_path = self.documentLocationInCreatingWorkspace.path
+
+        if path_prefix:
+            relative_path = relative_path.replace(path_prefix, "")
+
+        return f"* [ERROR] {self.message}\n  Found in {relative_path}:{self.documentLocationInCreatingWorkspace.starting_line_number}:{self.documentLocationInCreatingWorkspace.starting_column_number}"
+
 
 class Reference(XcresultObject):
     """Generated from xcresulttool format description.
@@ -563,6 +644,31 @@ class TestFailureIssueSummary(IssueSummary):
     """
 
     testCaseName: str
+
+    def pretty_message(self, path_prefix: Optional[str]) -> str:
+        """Format the message nicely for review.
+
+        :param path_prefix: Any path prefix to remove
+
+        :returns: A pretty message
+        """
+        output = f"* [{self.producingTarget}] {self.testCaseName} -> {self.message}"
+
+        if (
+            self.documentLocationInCreatingWorkspace is None
+            or self.documentLocationInCreatingWorkspace.path is None
+        ):
+            return output
+
+        relative_path = self.documentLocationInCreatingWorkspace.path
+
+        if path_prefix:
+            relative_path = relative_path.replace(path_prefix, "")
+
+        return (
+            output
+            + f"\n  Found in {relative_path}:{self.documentLocationInCreatingWorkspace.starting_line_number}:{self.documentLocationInCreatingWorkspace.starting_column_number}"
+        )
 
 
 class ActionTestActivitySummary(XcresultObject):
