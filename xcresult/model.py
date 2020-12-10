@@ -2,7 +2,12 @@
 
 import datetime
 import sys
-from typing import Any, List, Optional
+from typing import Any, Dict, List, Optional
+import urllib.parse
+
+
+# pylint: disable=too-many-lines
+# pylint: disable=invalid-name
 
 
 class XcresultObject:
@@ -88,14 +93,26 @@ class DocumentLocation(XcresultObject):
 
     @property
     def path(self) -> str:
+        """Get the path of the document if set, empty string otherwise.
+
+        :returns: The path of the document
+        """
         return self.url.split("#")[0].replace("file://", "")
 
     @property
     def location(self) -> str:
+        """Get the raw location inside the document
+
+        :returns: The location inside the document
+        """
         return self.url.split("#")[1]
 
     @property
-    def location_details(self) -> str:
+    def location_details(self) -> Dict[str, List[str]]:
+        """Get the raw location parameters inside the document
+
+        :returns: The location parametersinside the document
+        """
         return urllib.parse.parse_qs(self.location)
 
     def _get_property(self, key: str, *, offset: int = 0) -> Optional[int]:
@@ -113,30 +130,58 @@ class DocumentLocation(XcresultObject):
 
     @property
     def character_range_length(self) -> int:
+        """Get the character range length
+
+        :returns: The character range length
+        """
         return int(self.location_details["CharacterRangeLen"][0]) + 1
 
     @property
     def character_range_location(self) -> Optional[int]:
+        """Get the character range location if set, None otherwise
+
+        :returns: The character range location
+        """
         return self._get_property("CharacterRangeLoc")
 
     @property
     def ending_column_number(self) -> Optional[int]:
+        """Get the ending column number if set, None otherwise
+
+        :returns: The ending column number
+        """
         return self._get_property("EndingColumnNumber", offset=1)
 
     @property
     def ending_line_number(self) -> Optional[int]:
+        """Get the ending line number if set, None otherwise
+
+        :returns: The ending line number
+        """
         return self._get_property("EndingLineNumber", offset=1)
 
     @property
     def location_encoding(self) -> Optional[int]:
+        """Get the location encoding if set, None otherwise
+
+        :returns: The location encoding
+        """
         return self._get_property("LocationEncoding")
 
     @property
     def starting_column_number(self) -> Optional[int]:
+        """Get the starting column number if set, None otherwise
+
+        :returns: The starting column number
+        """
         return self._get_property("StartingColumnNumber", offset=1)
 
     @property
     def starting_line_number(self) -> Optional[int]:
+        """Get the starting line number if set, None otherwise
+
+        :returns: The starting line number
+        """
         return self._get_property("StartingLineNumber", offset=1)
 
 
@@ -433,7 +478,7 @@ class IssueSummary(XcresultObject):
         :returns: A pretty message
         """
         if self.documentLocationInCreatingWorkspace is None:
-            return f"* [{self.level.value.upper()}] " + self.message
+            return f"* [ERROR] {self.message}"
 
         relative_path = self.documentLocationInCreatingWorkspace.path
 
@@ -652,22 +697,24 @@ class TestFailureIssueSummary(IssueSummary):
 
         :returns: A pretty message
         """
-        output = f"* [{self.producingTarget}] {self.testCaseName} -> {self.message}"
+        output = f"* [{super().producingTarget}] {self.testCaseName} -> {super().message}"
+
+        documentLocationInCreatingWorkspace = super().documentLocationInCreatingWorkspace
 
         if (
-            self.documentLocationInCreatingWorkspace is None
-            or self.documentLocationInCreatingWorkspace.path is None
+            documentLocationInCreatingWorkspace is None
+            or documentLocationInCreatingWorkspace.path is None
         ):
             return output
 
-        relative_path = self.documentLocationInCreatingWorkspace.path
+        relative_path = documentLocationInCreatingWorkspace.path
 
         if path_prefix:
             relative_path = relative_path.replace(path_prefix, "")
 
         return (
             output
-            + f"\n  Found in {relative_path}:{self.documentLocationInCreatingWorkspace.starting_line_number}:{self.documentLocationInCreatingWorkspace.starting_column_number}"
+            + f"\n  Found in {relative_path}:{documentLocationInCreatingWorkspace.starting_line_number}:{documentLocationInCreatingWorkspace.starting_column_number}"
         )
 
 

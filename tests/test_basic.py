@@ -26,7 +26,7 @@ def test_deserialization_1():
         "identifier": {"_type": {"_name": "String"}, "_value": "com.apple.platform.macosx"},
         "userDescription": {"_type": {"_name": "String"}, "_value": "macOS"},
     }
-    result = xcresult.deserialize(sample)
+    result = xcresult.xcresulttool.deserialize(sample)
     assert isinstance(result, xcresult.ActionPlatformRecord)
     assert result.identifier == "com.apple.platform.macosx"
     assert result.userDescription == "macOS"
@@ -341,7 +341,7 @@ def test_deserialization_2():
         },
     }
 
-    result = xcresult.deserialize(sample)
+    result = xcresult.xcresulttool.deserialize(sample)
     assert isinstance(result, xcresult.ActionsInvocationRecord)
     assert isinstance(result.actions, list)
     assert len(result.actions) == 1

@@ -4,7 +4,7 @@ import datetime
 import json
 import os
 import subprocess
-from typing import Any, cast, Dict, List, get_type_hints, Tuple
+from typing import Any, cast, Dict, get_type_hints, List, Optional, Tuple
 
 from xcresult import model
 from xcresult.model import *
@@ -15,7 +15,7 @@ class Xcresults:
     """Wrapper around an xcresults bundle."""
 
     path: str
-    _actions_invocation_record: ActionsInvocationRecord
+    _actions_invocation_record: Optional[ActionsInvocationRecord]
 
     def __init__(self, path: str) -> None:
         self.path = path
@@ -23,6 +23,12 @@ class Xcresults:
 
     @property
     def actions_invocation_record(self) -> ActionsInvocationRecord:
+        """Get the actions invocation record
+
+        This is the default response when using xcresulttool
+
+        :returns: An ActionsInvocationRecord
+        """
         if not self._actions_invocation_record:
             self._actions_invocation_record = get_actions_invocation_record(self.path)
             assert self._actions_invocation_record is not None

@@ -4,10 +4,19 @@ import datetime
 import json
 import os
 import subprocess
-from typing import Any, cast, Dict, List, get_type_hints, Tuple
+from typing import Any, cast, Dict, get_type_hints, List, Optional, Tuple
 
 from xcresult import model
-from xcresult.model import *
+from xcresult.model import (
+    ActionsInvocationRecord,
+    ActionRecord,
+    ActionTestableSummary,
+    ActionTestAttachment,
+    ActionTestMetadata,
+    ActionTestPlanRunSummaries,
+    ActionTestSummary,
+    ActionTestSummaryGroup,
+)
 
 
 # pylint: disable=too-many-return-statements

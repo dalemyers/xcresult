@@ -6,7 +6,7 @@ def pretty_message(self, path_prefix: Optional[str]) -> str:
     :returns: A pretty message
     """
     if self.documentLocationInCreatingWorkspace is None:
-        return f"* [{self.level.value.upper()}] " + self.message
+        return f"* [ERROR] {self.message}"
 
     relative_path = self.documentLocationInCreatingWorkspace.path
 
