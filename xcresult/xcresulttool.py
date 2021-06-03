@@ -16,6 +16,7 @@ from xcresult.model import (
     ActionTestPlanRunSummaries,
     ActionTestSummary,
     ActionTestSummaryGroup,
+    ActionTestRepetitionPolicySummary,
 )
 
 

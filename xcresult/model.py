@@ -588,6 +588,20 @@ class ActionTestSummaryIdentifiableObject(ActionAbstractTestSummary):
 
     identifier: Optional[str]
 
+class ActionTestRepetitionPolicySummary(XcresultObject):
+    """Generated from xcresulttool format description.
+
+    - ActivityLogAnalyzerStep
+      * Kind: object
+      * Properties:
+        + iteration: Optional[int]
+        + totalIterations: Optional[int]
+        + repetitionMode: Optional[str]
+    """
+
+    iteration: Optional[int]
+    totalIterations: Optional[int]
+    repetitionMode: Optional[str]
 
 class ActivityLogAnalyzerControlFlowStep(ActivityLogAnalyzerStep):
     """Generated from xcresulttool format description.
