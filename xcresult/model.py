@@ -91,6 +91,7 @@ class DocumentLocation(XcresultObject):
         instance.url = "file://#CharacterRangeLen=0&EndingColumnNumber=0&EndingLineNumber=0&StartingColumnNumber=0&StartingLineNumber=0"
         return instance
 
+
     @property
     def path(self) -> str:
         """Get the path of the document if set, empty string otherwise.
@@ -98,6 +99,7 @@ class DocumentLocation(XcresultObject):
         :returns: The path of the document
         """
         return self.url.split("#")[0].replace("file://", "")
+
 
     @property
     def location(self) -> str:
@@ -107,6 +109,7 @@ class DocumentLocation(XcresultObject):
         """
         return self.url.split("#")[1]
 
+
     @property
     def location_details(self) -> Dict[str, List[str]]:
         """Get the raw location parameters inside the document
@@ -114,6 +117,7 @@ class DocumentLocation(XcresultObject):
         :returns: The location parametersinside the document
         """
         return urllib.parse.parse_qs(self.location)
+
 
     def _get_property(self, key: str, *, offset: int = 0) -> Optional[int]:
         """Get a property from the location details.
@@ -128,6 +132,7 @@ class DocumentLocation(XcresultObject):
             return None
         return int(value[0]) + offset
 
+
     @property
     def character_range_length(self) -> int:
         """Get the character range length
@@ -135,6 +140,7 @@ class DocumentLocation(XcresultObject):
         :returns: The character range length
         """
         return int(self.location_details["CharacterRangeLen"][0]) + 1
+
 
     @property
     def character_range_location(self) -> Optional[int]:
@@ -144,6 +150,7 @@ class DocumentLocation(XcresultObject):
         """
         return self._get_property("CharacterRangeLoc")
 
+
     @property
     def ending_column_number(self) -> Optional[int]:
         """Get the ending column number if set, None otherwise
@@ -151,6 +158,7 @@ class DocumentLocation(XcresultObject):
         :returns: The ending column number
         """
         return self._get_property("EndingColumnNumber", offset=1)
+
 
     @property
     def ending_line_number(self) -> Optional[int]:
@@ -160,6 +168,7 @@ class DocumentLocation(XcresultObject):
         """
         return self._get_property("EndingLineNumber", offset=1)
 
+
     @property
     def location_encoding(self) -> Optional[int]:
         """Get the location encoding if set, None otherwise
@@ -168,6 +177,7 @@ class DocumentLocation(XcresultObject):
         """
         return self._get_property("LocationEncoding")
 
+
     @property
     def starting_column_number(self) -> Optional[int]:
         """Get the starting column number if set, None otherwise
@@ -175,6 +185,7 @@ class DocumentLocation(XcresultObject):
         :returns: The starting column number
         """
         return self._get_property("StartingColumnNumber", offset=1)
+
 
     @property
     def starting_line_number(self) -> Optional[int]:
@@ -364,6 +375,7 @@ class ActionTestPerformanceMetricSummary(XcresultObject):
         + maxPercentRelativeStandardDeviation: Double?
         + maxRegression: Double?
         + maxStandardDeviation: Double?
+        + polarity: String?
     """
 
     displayName: str
@@ -376,6 +388,23 @@ class ActionTestPerformanceMetricSummary(XcresultObject):
     maxPercentRelativeStandardDeviation: Optional[float]
     maxRegression: Optional[float]
     maxStandardDeviation: Optional[float]
+    polarity: Optional[str]
+
+
+class ActionTestRepetitionPolicySummary(XcresultObject):
+    """Generated from xcresulttool format description.
+
+    - ActionTestRepetitionPolicySummary
+      * Kind: object
+      * Properties:
+        + iteration: Int?
+        + totalIterations: Int?
+        + repetitionMode: String?
+    """
+
+    iteration: Optional[int]
+    totalIterations: Optional[int]
+    repetitionMode: Optional[str]
 
 
 class ActionsInvocationMetadata(XcresultObject):
@@ -588,20 +617,6 @@ class ActionTestSummaryIdentifiableObject(ActionAbstractTestSummary):
 
     identifier: Optional[str]
 
-class ActionTestRepetitionPolicySummary(XcresultObject):
-    """Generated from xcresulttool format description.
-
-    - ActivityLogAnalyzerStep
-      * Kind: object
-      * Properties:
-        + iteration: Optional[int]
-        + totalIterations: Optional[int]
-        + repetitionMode: Optional[str]
-    """
-
-    iteration: Optional[int]
-    totalIterations: Optional[int]
-    repetitionMode: Optional[str]
 
 class ActivityLogAnalyzerControlFlowStep(ActivityLogAnalyzerStep):
     """Generated from xcresulttool format description.
@@ -748,6 +763,7 @@ class ActionTestActivitySummary(XcresultObject):
         + attachments: [ActionTestAttachment]
         + subactivities: [ActionTestActivitySummary]
         + failureSummaryIDs: [String]
+        + expectedFailureIDs: [String]
     """
 
     title: str
@@ -758,6 +774,7 @@ class ActionTestActivitySummary(XcresultObject):
     attachments: List[ActionTestAttachment]
     subactivities: List["ActionTestActivitySummary"]
     failureSummaryIDs: List[str]
+    expectedFailureIDs: List[str]
 
 
 class ActionTestMetadata(ActionTestSummaryIdentifiableObject):
@@ -822,6 +839,7 @@ class ActivityLogAnalyzerWarningMessage(ActivityLogMessage):
       * Supertype: ActivityLogMessage
       * Kind: object
     """
+
 
 
 class ActivityLogSection(XcresultObject):
@@ -1056,27 +1074,22 @@ class ActivityLogTargetBuildSection(ActivityLogMajorSection):
     productType: Optional[str]
 
 
-class ActionTestSummary(ActionTestSummaryIdentifiableObject):
+class ActionTestExpectedFailure(XcresultObject):
     """Generated from xcresulttool format description.
 
-    - ActionTestSummary
-      * Supertype: ActionTestSummaryIdentifiableObject
+    - ActionTestExpectedFailure
       * Kind: object
       * Properties:
-        + testStatus: String
-        + duration: Double
-        + performanceMetrics: [ActionTestPerformanceMetricSummary]
-        + failureSummaries: [ActionTestFailureSummary]
-        + skipNoticeSummary: ActionTestNoticeSummary?
-        + activitySummaries: [ActionTestActivitySummary]
+        + uuid: String
+        + failureReason: String?
+        + failureSummary: ActionTestFailureSummary?
+        + isTopLevelFailure: Bool
     """
 
-    testStatus: str
-    duration: float
-    performanceMetrics: List[ActionTestPerformanceMetricSummary]
-    failureSummaries: List[ActionTestFailureSummary]
-    skipNoticeSummary: Optional[ActionTestNoticeSummary]
-    activitySummaries: List[ActionTestActivitySummary]
+    uuid: str
+    failureReason: Optional[str]
+    failureSummary: Optional[ActionTestFailureSummary]
+    isTopLevelFailure: bool
 
 
 class ActionTestableSummary(ActionAbstractTestSummary):
@@ -1139,6 +1152,33 @@ class ActionTestPlanRunSummary(ActionAbstractTestSummary):
     testableSummaries: List[ActionTestableSummary]
 
 
+class ActionTestSummary(ActionTestSummaryIdentifiableObject):
+    """Generated from xcresulttool format description.
+
+    - ActionTestSummary
+      * Supertype: ActionTestSummaryIdentifiableObject
+      * Kind: object
+      * Properties:
+        + testStatus: String
+        + duration: Double
+        + performanceMetrics: [ActionTestPerformanceMetricSummary]
+        + failureSummaries: [ActionTestFailureSummary]
+        + expectedFailures: [ActionTestExpectedFailure]
+        + skipNoticeSummary: ActionTestNoticeSummary?
+        + activitySummaries: [ActionTestActivitySummary]
+        + repetitionPolicySummary: ActionTestRepetitionPolicySummary?
+    """
+
+    testStatus: str
+    duration: float
+    performanceMetrics: List[ActionTestPerformanceMetricSummary]
+    failureSummaries: List[ActionTestFailureSummary]
+    expectedFailures: List[ActionTestExpectedFailure]
+    skipNoticeSummary: Optional[ActionTestNoticeSummary]
+    activitySummaries: List[ActionTestActivitySummary]
+    repetitionPolicySummary: Optional[ActionTestRepetitionPolicySummary]
+
+
 class ActionTestPlanRunSummaries(XcresultObject):
     """Generated from xcresulttool format description.
 
@@ -1151,13 +1191,12 @@ class ActionTestPlanRunSummaries(XcresultObject):
     summaries: List[ActionTestPlanRunSummary]
 
 
+
 _CURRENT_MODULE = sys.modules[__name__]
 _MODEL_NAMES = dir(_CURRENT_MODULE)
 _MODEL_NAMES = [m for m in _MODEL_NAMES if not m.startswith("__")]
 _RESOLVED_MODELS = [getattr(_CURRENT_MODULE, m) for m in _MODEL_NAMES]
 # pylint: disable=unidiomatic-typecheck
-_RESOLVED_MODELS = [
-    m for m in _RESOLVED_MODELS if type(m) == type(type) and issubclass(m, XcresultObject)
-]
+_RESOLVED_MODELS = [m for m in _RESOLVED_MODELS if type(m) == type(type) and issubclass(m, XcresultObject)]
 # pylint: enable=unidiomatic-typecheck
 MODELS = {m.__name__: m for m in _RESOLVED_MODELS}
