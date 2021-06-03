@@ -2,6 +2,7 @@
 
 import datetime
 import json
+import logging
 import os
 import subprocess
 from typing import Any, cast, Dict, get_type_hints, List, Optional, Tuple
@@ -17,6 +18,10 @@ from xcresult.model import (
     ActionTestSummary,
     ActionTestSummaryGroup,
 )
+
+
+class UnsupportedType(Exception):
+    """A new and, as yet, unsupported type."""
 
 
 # pylint: disable=too-many-return-statements
@@ -54,11 +59,19 @@ def deserialize(data: Dict[str, Any]) -> Any:
             return datetime.datetime.strptime(data["_value"], "%Y-%m-%dT%H:%M:%S.%f%z")
         raise Exception("Unknown type: " + type_name)
 
-    xc_class = model.MODELS[type_name]
+    xc_class = model.MODELS.get(type_name)
+
+    if xc_class is None:
+        raise UnsupportedType()
+
     instance = xc_class.__new__(xc_class)
 
     for key, value in data.items():
-        setattr(instance, key, deserialize(value))
+        try:
+            setattr(instance, key, deserialize(value))
+        except UnsupportedType:
+            logging.warning(f"Found unsupported property on {type_name} when deserializing: {key}")
+            continue
 
     for property_name, property_type in get_type_hints(xc_class).items():
         if not hasattr(instance, property_name):
