@@ -299,4 +299,4 @@ def generate(output_path: str):
 
 
 if __name__ == "__main__":
-    generate("/Users/dalemy/Projects/xcresult/xcresult/model.py")
+    generate(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "xcresult", "model.py")))
