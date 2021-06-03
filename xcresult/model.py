@@ -364,6 +364,7 @@ class ActionTestPerformanceMetricSummary(XcresultObject):
         + maxPercentRelativeStandardDeviation: Double?
         + maxRegression: Double?
         + maxStandardDeviation: Double?
+        + polarity: String?
     """
 
     displayName: str
@@ -376,6 +377,23 @@ class ActionTestPerformanceMetricSummary(XcresultObject):
     maxPercentRelativeStandardDeviation: Optional[float]
     maxRegression: Optional[float]
     maxStandardDeviation: Optional[float]
+    polarity: Optional[str]
+
+
+class ActionTestRepetitionPolicySummary(XcresultObject):
+    """Generated from xcresulttool format description.
+
+    - ActionTestRepetitionPolicySummary
+      * Kind: object
+      * Properties:
+        + iteration: Int?
+        + totalIterations: Int?
+        + repetitionMode: String?
+    """
+
+    iteration: Optional[int]
+    totalIterations: Optional[int]
+    repetitionMode: Optional[str]
 
 
 class ActionsInvocationMetadata(XcresultObject):
@@ -734,6 +752,7 @@ class ActionTestActivitySummary(XcresultObject):
         + attachments: [ActionTestAttachment]
         + subactivities: [ActionTestActivitySummary]
         + failureSummaryIDs: [String]
+        + expectedFailureIDs: [String]
     """
 
     title: str
@@ -744,6 +763,7 @@ class ActionTestActivitySummary(XcresultObject):
     attachments: List[ActionTestAttachment]
     subactivities: List["ActionTestActivitySummary"]
     failureSummaryIDs: List[str]
+    expectedFailureIDs: List[str]
 
 
 class ActionTestMetadata(ActionTestSummaryIdentifiableObject):
@@ -1042,27 +1062,22 @@ class ActivityLogTargetBuildSection(ActivityLogMajorSection):
     productType: Optional[str]
 
 
-class ActionTestSummary(ActionTestSummaryIdentifiableObject):
+class ActionTestExpectedFailure(XcresultObject):
     """Generated from xcresulttool format description.
 
-    - ActionTestSummary
-      * Supertype: ActionTestSummaryIdentifiableObject
+    - ActionTestExpectedFailure
       * Kind: object
       * Properties:
-        + testStatus: String
-        + duration: Double
-        + performanceMetrics: [ActionTestPerformanceMetricSummary]
-        + failureSummaries: [ActionTestFailureSummary]
-        + skipNoticeSummary: ActionTestNoticeSummary?
-        + activitySummaries: [ActionTestActivitySummary]
+        + uuid: String
+        + failureReason: String?
+        + failureSummary: ActionTestFailureSummary?
+        + isTopLevelFailure: Bool
     """
 
-    testStatus: str
-    duration: float
-    performanceMetrics: List[ActionTestPerformanceMetricSummary]
-    failureSummaries: List[ActionTestFailureSummary]
-    skipNoticeSummary: Optional[ActionTestNoticeSummary]
-    activitySummaries: List[ActionTestActivitySummary]
+    uuid: str
+    failureReason: Optional[str]
+    failureSummary: Optional[ActionTestFailureSummary]
+    isTopLevelFailure: bool
 
 
 class ActionTestableSummary(ActionAbstractTestSummary):
@@ -1123,6 +1138,33 @@ class ActionTestPlanRunSummary(ActionAbstractTestSummary):
     """
 
     testableSummaries: List[ActionTestableSummary]
+
+
+class ActionTestSummary(ActionTestSummaryIdentifiableObject):
+    """Generated from xcresulttool format description.
+
+    - ActionTestSummary
+      * Supertype: ActionTestSummaryIdentifiableObject
+      * Kind: object
+      * Properties:
+        + testStatus: String
+        + duration: Double
+        + performanceMetrics: [ActionTestPerformanceMetricSummary]
+        + failureSummaries: [ActionTestFailureSummary]
+        + expectedFailures: [ActionTestExpectedFailure]
+        + skipNoticeSummary: ActionTestNoticeSummary?
+        + activitySummaries: [ActionTestActivitySummary]
+        + repetitionPolicySummary: ActionTestRepetitionPolicySummary?
+    """
+
+    testStatus: str
+    duration: float
+    performanceMetrics: List[ActionTestPerformanceMetricSummary]
+    failureSummaries: List[ActionTestFailureSummary]
+    expectedFailures: List[ActionTestExpectedFailure]
+    skipNoticeSummary: Optional[ActionTestNoticeSummary]
+    activitySummaries: List[ActionTestActivitySummary]
+    repetitionPolicySummary: Optional[ActionTestRepetitionPolicySummary]
 
 
 class ActionTestPlanRunSummaries(XcresultObject):
