@@ -574,6 +574,7 @@ class ActionTestAttachment(XcresultObject):
       * Properties:
         + uniformTypeIdentifier: String
         + name: String?
+        + uuid: String?
         + timestamp: Date?
         + userInfo: SortedKeyValueArray?
         + lifetime: String
@@ -585,6 +586,7 @@ class ActionTestAttachment(XcresultObject):
 
     uniformTypeIdentifier: str
     name: Optional[str]
+    uuid: Optional[str]
     timestamp: Optional[datetime.datetime]
     userInfo: Optional[SortedKeyValueArray]
     lifetime: str
@@ -592,6 +594,18 @@ class ActionTestAttachment(XcresultObject):
     filename: Optional[str]
     payloadRef: Optional[Reference]
     payloadSize: int
+
+
+class ActionTestConfiguration(XcresultObject):
+    """Generated from xcresulttool format description.
+
+    - ActionTestConfiguration
+      * Kind: object
+      * Properties:
+        + values: SortedKeyValueArray
+    """
+
+    values: SortedKeyValueArray
 
 
 class ActionTestSummaryIdentifiableObject(ActionAbstractTestSummary):
@@ -1155,6 +1169,7 @@ class ActionTestSummary(ActionTestSummaryIdentifiableObject):
         + skipNoticeSummary: ActionTestNoticeSummary?
         + activitySummaries: [ActionTestActivitySummary]
         + repetitionPolicySummary: ActionTestRepetitionPolicySummary?
+        + configuration: ActionTestConfiguration?
     """
 
     testStatus: str
@@ -1165,6 +1180,7 @@ class ActionTestSummary(ActionTestSummaryIdentifiableObject):
     skipNoticeSummary: Optional[ActionTestNoticeSummary]
     activitySummaries: List[ActionTestActivitySummary]
     repetitionPolicySummary: Optional[ActionTestRepetitionPolicySummary]
+    configuration: Optional[ActionTestConfiguration]
 
 
 class ActionTestPlanRunSummaries(XcresultObject):
