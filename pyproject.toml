@@ -27,6 +27,9 @@ classifiers = [
     "Topic :: Software Development :: Libraries"
 ]
 
+[tool.poetry.scripts]
+xcresult = 'xcresult:command_line.run'
+
 [tool.poetry.dependencies]
 python = "^3.7"
 

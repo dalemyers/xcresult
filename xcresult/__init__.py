@@ -45,8 +45,3 @@ class Xcresults:
         :param output_folder: The output folder to write the attachments to
         """
         export_attachments(self.path, output_folder)
-
-
-if __name__ == "__main__":
-    bundle = Xcresults("/Users/dalemy/Downloads/Outlook-iOS-Tests Unit.xcresult")
-    bundle.export_attachments("/Users/dalemy/Downloads")
