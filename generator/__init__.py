@@ -4,7 +4,7 @@ import os
 import subprocess
 from typing import List, Optional, Tuple
 
-
+# Mapping of xcresulttool data types to base Python types
 DATA_TYPES = {
     "Int": "int",
     "String": "str",
@@ -16,6 +16,16 @@ DATA_TYPES = {
 
 
 def get_indentation(line: str) -> int:
+    """Get the indentation level of a line.
+
+    Lines are indented by 2 spaces at a time, so we just count how many spaces
+    and divide by 2 to get indentation level.
+
+    :param line: The line to get the indentation depth of
+
+    :returns: The indentation depth
+    """
+
     if len(line) == 0:
         return 0
 
@@ -31,12 +41,24 @@ def get_indentation(line: str) -> int:
     return int(count / 2)
 
 
-def dedent(lines) -> List[str]:
+def dedent(lines: List[str]) -> List[str]:
+    """De-dent lines of code by one level.
+
+    :param lines: The lines of code to dedent
+
+    :returns: The dedented code
+    """
     return [line[2:] for line in lines]
 
 
 class XcresultType:
+    """Represents a type."""
+
     def __init__(self, original: str) -> None:
+        """Create a new instance.
+
+        :param original: The original raw definition
+        """
         self.original = original
         self.root_type = original
         self.is_list = False
@@ -50,9 +72,16 @@ class XcresultType:
             self.root_type = self.root_type[:-1]
             self.is_optional = True
 
-    def python_type(self, name: str, container_type: str) -> Tuple[str, List[str]]:
+    def python_type(self, container_type: str) -> str:
+        """Get the corresponding Python type for this type.
+
+        :param container_type: The container this type is in. Needed for
+        self-referencing.
+
+        :returns: The Python type
+        """
+
         output = ""
-        annotations = []
         if self.is_list:
             output += "List["
 
@@ -72,10 +101,12 @@ class XcresultType:
         if self.is_list:
             output += "]"
 
-        return output, annotations
+        return output
 
 
 class Definition:
+    """Represents a definition from xcresulttool."""
+
     def __init__(
         self,
         name: str,
@@ -91,6 +122,11 @@ class Definition:
         self.original = original
 
     def dependency_types(self) -> List[str]:
+        """Get the list of types that are a dependency of this one.
+
+        :returns: All dependency definitions of this type.
+        """
+
         raw_types = list(map(lambda x: x[1], self.properties))
         if self.supertype:
             raw_types.append(self.supertype)
@@ -108,6 +144,10 @@ class Definition:
         )
 
     def python(self) -> str:
+        """Convert this definition to Python code.
+
+        :returns: Python code as a string
+        """
         output = []
 
         if self.kind != "object":
@@ -132,8 +172,7 @@ class Definition:
 
         for name, ptype in self.properties:
             xctype = XcresultType(ptype)
-            python_type, annotations = xctype.python_type(name, self.name)
-            output = annotations + output
+            python_type = xctype.python_type(self.name)
             output.append(f"    {name}: {python_type}")
 
         additional_methods_path = os.path.join(
@@ -141,7 +180,7 @@ class Definition:
         )
         if os.path.exists(additional_methods_path):
             output.append("")
-            with open(additional_methods_path) as additional_methods_file:
+            with open(additional_methods_path, encoding="utf-8") as additional_methods_file:
                 for line in additional_methods_file.readlines():
                     stripped = line.rstrip()
                     if len(stripped) > 0:
@@ -152,7 +191,14 @@ class Definition:
         return output
 
     @staticmethod
-    def from_format_description(lines) -> "Definition":
+    def from_format_description(lines: List[str]) -> "Definition":
+        """Take an invidiual format description and convert to a 'Definition'.
+
+        :param lines: The lines of raw description from xcresulttool
+
+        :returns: A newly constructed 'Definition'
+        """
+
         lines = dedent(lines)
         original = lines[:]
         name_line = lines.pop(0)
@@ -190,7 +236,14 @@ class Definition:
         return Definition(name, kind, supertype, properties, original)
 
 
-def get_definitions(format_description) -> List[Definition]:
+def get_definitions(format_description: str) -> List[Definition]:
+    """Convert the raw output from xcresulttool info a format we can use.
+
+    :param format_description: The raw format info from xcresulttool
+
+    :returns: A list of definitions
+    """
+
     root_properties = {}
     definitions = [Definition("XcresultObject", "object", None, [])]
     buffer = []
@@ -222,6 +275,12 @@ def get_definitions(format_description) -> List[Definition]:
 
 
 def order_definitions(definitions: List[Definition]) -> List[Definition]:
+    """Sort the definitions so that they are always defined before they are referenced.
+
+    :param definitions: The unsorted list of definitions
+
+    :returns: The sorted list of definitions
+    """
     output = []
     definition_dict = {definition.name: definition for definition in definitions}
     dependency_types = {
@@ -255,7 +314,11 @@ def order_definitions(definitions: List[Definition]) -> List[Definition]:
     return output
 
 
-def generate(output_path: str):
+def generate(output_path: str) -> None:
+    """Generate the model Python code.
+
+    :param output_path: The path to write the generated code to
+    """
     output = subprocess.run(
         ["xcrun", "xcresulttool", "formatDescription"],
         check=True,
@@ -267,7 +330,7 @@ def generate(output_path: str):
     definitions = get_definitions(output)
     definitions = order_definitions(definitions)
 
-    with open(output_path, "w") as output_file:
+    with open(output_path, "w", encoding="utf-8") as output_file:
         output_file.write('"""Autogenerated models for xcresulttool."""\n\n')
         output_file.write("import datetime\n")
         output_file.write("import sys\n")
