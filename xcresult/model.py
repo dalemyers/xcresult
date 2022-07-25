@@ -97,7 +97,7 @@ class DocumentLocation(XcresultObject):
 
         :returns: The path of the document
         """
-        return self.url.split("#")[0].replace("file://", "")
+        return self.url.split("#", maxsplit=1)[0].replace("file://", "")
 
     @property
     def location(self) -> str:

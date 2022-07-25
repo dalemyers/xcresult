@@ -3,7 +3,6 @@
 """Command line handler for xcresult."""
 
 import argparse
-import json
 import os
 import sys
 
@@ -13,6 +12,9 @@ except ImportError:
     # Insert the package into the PATH
     sys.path.insert(0, os.path.abspath(os.path.join(os.path.abspath(__file__), "..", "..")))
     import xcresult
+
+
+# pylint: disable=broad-except
 
 
 def _handle_export(args: argparse.Namespace) -> int:
