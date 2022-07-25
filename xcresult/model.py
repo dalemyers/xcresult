@@ -100,12 +100,15 @@ class DocumentLocation(XcresultObject):
         return self.url.split("#")[0].replace("file://", "")
 
     @property
-    def location(self) -> str:
+    def location(self) -> Optional[str]:
         """Get the raw location inside the document
 
-        :returns: The location inside the document
+        :returns: The location inside the document if set, None otherwise
         """
-        return self.url.split("#")[1]
+        components = self.url.split("#")
+        if len(components) > 1:
+            return components[1]
+        return None
 
     @property
     def location_details(self) -> Dict[str, List[str]]:
