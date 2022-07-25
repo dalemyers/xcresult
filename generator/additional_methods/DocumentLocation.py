@@ -20,12 +20,15 @@ def path(self) -> str:
 
 
 @property
-def location(self) -> str:
-    """Get the raw location inside the document
+def location(self) -> Optional[str]:
+    """Get the raw location inside the document if available
 
     :returns: The location inside the document
     """
-    return self.url.split("#")[1]
+    components = self.url.split("#")
+    if len(components) > 1:
+        return components[1]
+    return None
 
 
 @property

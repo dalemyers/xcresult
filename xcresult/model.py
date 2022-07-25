@@ -100,12 +100,15 @@ class DocumentLocation(XcresultObject):
         return self.url.split("#", maxsplit=1)[0].replace("file://", "")
 
     @property
-    def location(self) -> str:
-        """Get the raw location inside the document
+    def location(self) -> Optional[str]:
+        """Get the raw location inside the document if available
 
         :returns: The location inside the document
         """
-        return self.url.split("#")[1]
+        components = self.url.split("#")
+        if len(components) > 1:
+            return components[1]
+        return None
 
     @property
     def location_details(self) -> Dict[str, List[str]]:
@@ -341,11 +344,13 @@ class ActionTestNoticeSummary(XcresultObject):
         + message: String?
         + fileName: String
         + lineNumber: Int
+        + timestamp: Date?
     """
 
     message: Optional[str]
     fileName: str
     lineNumber: int
+    timestamp: Optional[datetime.datetime]
 
 
 class ActionTestPerformanceMetricSummary(XcresultObject):
@@ -469,6 +474,24 @@ class ArchiveInfo(XcresultObject):
     """
 
     path: Optional[str]
+
+
+class ConsoleLogItem(XcresultObject):
+    """Generated from xcresulttool format description.
+
+    - ConsoleLogItem
+      * Kind: object
+      * Properties:
+        + adaptorType: String?
+        + kind: String?
+        + timestamp: Double
+        + content: String
+    """
+
+    adaptorType: Optional[str]
+    kind: Optional[str]
+    timestamp: float
+    content: str
 
 
 class IssueSummary(XcresultObject):
@@ -616,9 +639,11 @@ class ActionTestSummaryIdentifiableObject(ActionAbstractTestSummary):
       * Kind: object
       * Properties:
         + identifier: String?
+        + identifierURL: String?
     """
 
     identifier: Optional[str]
+    identifierURL: Optional[str]
 
 
 class ActivityLogAnalyzerControlFlowStep(ActivityLogAnalyzerStep):
@@ -676,6 +701,20 @@ class CodeCoverageInfo(XcresultObject):
     hasCoverageData: bool
     reportRef: Optional[Reference]
     archiveRef: Optional[Reference]
+
+
+class ConsoleLogSection(XcresultObject):
+    """Generated from xcresulttool format description.
+
+    - ConsoleLogSection
+      * Kind: object
+      * Properties:
+        + title: String
+        + items: [ConsoleLogItem]
+    """
+
+    title: str
+    items: List[ConsoleLogItem]
 
 
 class SourceCodeSymbolInfo(XcresultObject):
@@ -917,6 +956,7 @@ class ActionResult(XcresultObject):
         + logRef: Reference?
         + testsRef: Reference?
         + diagnosticsRef: Reference?
+        + consoleLogRef: Reference?
     """
 
     resultName: str
@@ -928,6 +968,7 @@ class ActionResult(XcresultObject):
     logRef: Optional[Reference]
     testsRef: Optional[Reference]
     diagnosticsRef: Optional[Reference]
+    consoleLogRef: Optional[Reference]
 
 
 class ActivityLogCommandInvocationSection(ActivityLogSection):
@@ -1017,6 +1058,7 @@ class ActionRecord(XcresultObject):
         + runDestination: ActionRunDestinationRecord
         + buildResult: ActionResult
         + actionResult: ActionResult
+        + testPlanName: String?
     """
 
     schemeCommandName: str
@@ -1027,6 +1069,7 @@ class ActionRecord(XcresultObject):
     runDestination: ActionRunDestinationRecord
     buildResult: ActionResult
     actionResult: ActionResult
+    testPlanName: Optional[str]
 
 
 class ActionTestFailureSummary(XcresultObject):
@@ -1101,6 +1144,7 @@ class ActionTestableSummary(ActionAbstractTestSummary):
       * Supertype: ActionAbstractTestSummary
       * Kind: object
       * Properties:
+        + identifierURL: String?
         + projectRelativePath: String?
         + targetName: String?
         + testKind: String?
@@ -1111,6 +1155,7 @@ class ActionTestableSummary(ActionAbstractTestSummary):
         + testRegion: String?
     """
 
+    identifierURL: Optional[str]
     projectRelativePath: Optional[str]
     targetName: Optional[str]
     testKind: Optional[str]
