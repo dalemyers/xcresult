@@ -294,7 +294,6 @@ def export_attachments(path: str, output_folder: str) -> None:
         attachments.extend(action_attachments)
 
     for index, (test, attachment) in enumerate(attachments):
-
         if attachment.payloadRef is None:
             continue
 
