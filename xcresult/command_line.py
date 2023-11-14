@@ -10,9 +10,7 @@ try:
     import xcresult
 except ImportError:
     # Insert the package into the PATH
-    sys.path.insert(
-        0, os.path.abspath(os.path.join(os.path.abspath(__file__), "..", ".."))
-    )
+    sys.path.insert(0, os.path.abspath(os.path.join(os.path.abspath(__file__), "..", "..")))
     import xcresult
 
 
@@ -49,9 +47,7 @@ def _handle_arguments() -> int:
 
     subparsers = parser.add_subparsers()
 
-    export_parser = subparsers.add_parser(
-        "export", help="Export attachments from a bundle"
-    )
+    export_parser = subparsers.add_parser("export", help="Export attachments from a bundle")
 
     export_parser.add_argument(
         "-o",

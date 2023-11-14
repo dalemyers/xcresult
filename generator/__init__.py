@@ -7,6 +7,14 @@ from typing import List, Optional, Tuple
 
 DATA_TYPES = {
     "Int": "int",
+    "Int8": "int",
+    "Int16": "int",
+    "Int32": "int",
+    "Int64": "int",
+    "UInt8": "int",
+    "UInt16": "int",
+    "UInt32": "int",
+    "UInt64": "int",
     "String": "str",
     "Double": "float",
     "Bool": "bool",
@@ -137,7 +145,9 @@ class Definition:
             output.append(f"    {name}: {python_type}")
 
         additional_methods_path = os.path.join(
-            os.path.dirname(os.path.abspath(__file__)), "additional_methods", f"{self.name}.py"
+            os.path.dirname(os.path.abspath(__file__)),
+            "additional_methods",
+            f"{self.name}.py",
         )
         if os.path.exists(additional_methods_path):
             output.append("")
@@ -225,7 +235,8 @@ def order_definitions(definitions: List[Definition]) -> List[Definition]:
     output = []
     definition_dict = {definition.name: definition for definition in definitions}
     dependency_types = {
-        definition.name: set(definition.dependency_types()) for definition in definitions
+        definition.name: set(definition.dependency_types())
+        for definition in definitions
     }
 
     while len(dependency_types) > 0:
@@ -286,7 +297,9 @@ def generate(output_path: str):
 
         output_file.write("_CURRENT_MODULE = sys.modules[__name__]\n")
         output_file.write("_MODEL_NAMES = dir(_CURRENT_MODULE)\n")
-        output_file.write('_MODEL_NAMES = [m for m in _MODEL_NAMES if not m.startswith("__")]\n')
+        output_file.write(
+            '_MODEL_NAMES = [m for m in _MODEL_NAMES if not m.startswith("__")]\n'
+        )
         output_file.write(
             "_RESOLVED_MODELS = [getattr(_CURRENT_MODULE, m) for m in _MODEL_NAMES]\n"
         )
@@ -299,4 +312,8 @@ def generate(output_path: str):
 
 
 if __name__ == "__main__":
-    generate(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "xcresult", "model.py")))
+    generate(
+        os.path.abspath(
+            os.path.join(os.path.dirname(__file__), "..", "xcresult", "model.py")
+        )
+    )

@@ -209,6 +209,18 @@ class EntityIdentifier(XcresultObject):
 # Defined Type: Int
 
 
+# Defined Type: Int16
+
+
+# Defined Type: Int32
+
+
+# Defined Type: Int64
+
+
+# Defined Type: Int8
+
+
 class ObjectID(XcresultObject):
     """Generated from xcresulttool format description.
 
@@ -219,28 +231,6 @@ class ObjectID(XcresultObject):
     """
 
     hash: str
-
-
-class ResultMetrics(XcresultObject):
-    """Generated from xcresulttool format description.
-
-    - ResultMetrics
-      * Kind: object
-      * Properties:
-        + analyzerWarningCount: Int
-        + errorCount: Int
-        + testsCount: Int
-        + testsFailedCount: Int
-        + testsSkippedCount: Int
-        + warningCount: Int
-    """
-
-    analyzerWarningCount: int
-    errorCount: int
-    testsCount: int
-    testsFailedCount: int
-    testsSkippedCount: int
-    warningCount: int
 
 
 class SortedKeyValueArrayPair(XcresultObject):
@@ -272,6 +262,18 @@ class TypeDefinition(XcresultObject):
 
     name: str
     supertype: Optional["TypeDefinition"]
+
+
+# Defined Type: UInt16
+
+
+# Defined Type: UInt32
+
+
+# Defined Type: UInt64
+
+
+# Defined Type: UInt8
 
 
 class ActionAbstractTestSummary(XcresultObject):
@@ -341,11 +343,13 @@ class ActionTestNoticeSummary(XcresultObject):
         + message: String?
         + fileName: String
         + lineNumber: Int
+        + timestamp: Date?
     """
 
     message: Optional[str]
     fileName: str
     lineNumber: int
+    timestamp: Optional[datetime.datetime]
 
 
 class ActionTestPerformanceMetricSummary(XcresultObject):
@@ -471,6 +475,48 @@ class ArchiveInfo(XcresultObject):
     path: Optional[str]
 
 
+class ConsoleLogItemLogData(XcresultObject):
+    """Generated from xcresulttool format description.
+
+    - ConsoleLogItemLogData
+      * Kind: object
+      * Properties:
+        + message: String?
+        + subsystem: String?
+        + category: String?
+        + library: String?
+        + format: String?
+        + backtrace: String?
+        + pid: Int32
+        + processName: String?
+        + sessionUUID: String?
+        + tid: UInt64
+        + messageType: UInt8
+        + senderImagePath: String?
+        + senderImageUUID: String?
+        + senderImageOffset: UInt64
+        + unixTimeInterval: Double
+        + timeZone: String?
+    """
+
+    message: Optional[str]
+    subsystem: Optional[str]
+    category: Optional[str]
+    library: Optional[str]
+    format: Optional[str]
+    backtrace: Optional[str]
+    pid: int
+    processName: Optional[str]
+    sessionUUID: Optional[str]
+    tid: int
+    messageType: int
+    senderImagePath: Optional[str]
+    senderImageUUID: Optional[str]
+    senderImageOffset: int
+    unixTimeInterval: float
+    timeZone: Optional[str]
+
+
 class IssueSummary(XcresultObject):
     """Generated from xcresulttool format description.
 
@@ -518,6 +564,30 @@ class Reference(XcresultObject):
 
     id: str
     targetType: Optional[TypeDefinition]
+
+
+class ResultMetrics(XcresultObject):
+    """Generated from xcresulttool format description.
+
+    - ResultMetrics
+      * Kind: object
+      * Properties:
+        + analyzerWarningCount: Int
+        + errorCount: Int
+        + testsCount: Int
+        + testsFailedCount: Int
+        + testsSkippedCount: Int
+        + warningCount: Int
+        + totalCoveragePercentage: Double?
+    """
+
+    analyzerWarningCount: int
+    errorCount: int
+    testsCount: int
+    testsFailedCount: int
+    testsSkippedCount: int
+    warningCount: int
+    totalCoveragePercentage: Optional[float]
 
 
 class SortedKeyValueArray(XcresultObject):
@@ -616,9 +686,11 @@ class ActionTestSummaryIdentifiableObject(ActionAbstractTestSummary):
       * Kind: object
       * Properties:
         + identifier: String?
+        + identifierURL: String?
     """
 
     identifier: Optional[str]
+    identifierURL: Optional[str]
 
 
 class ActivityLogAnalyzerControlFlowStep(ActivityLogAnalyzerStep):
@@ -676,6 +748,26 @@ class CodeCoverageInfo(XcresultObject):
     hasCoverageData: bool
     reportRef: Optional[Reference]
     archiveRef: Optional[Reference]
+
+
+class ConsoleLogItem(XcresultObject):
+    """Generated from xcresulttool format description.
+
+    - ConsoleLogItem
+      * Kind: object
+      * Properties:
+        + adaptorType: String?
+        + kind: String?
+        + timestamp: Double
+        + content: String
+        + logData: ConsoleLogItemLogData?
+    """
+
+    adaptorType: Optional[str]
+    kind: Optional[str]
+    timestamp: float
+    content: str
+    logData: Optional[ConsoleLogItemLogData]
 
 
 class SourceCodeSymbolInfo(XcresultObject):
@@ -752,6 +844,19 @@ class TestFailureIssueSummary(IssueSummary):
         # pylint: enable=no-member
 
 
+class TestIssueSummary(IssueSummary):
+    """Generated from xcresulttool format description.
+
+    - TestIssueSummary
+      * Supertype: IssueSummary
+      * Kind: object
+      * Properties:
+        + testCaseName: String
+    """
+
+    testCaseName: str
+
+
 class ActionTestActivitySummary(XcresultObject):
     """Generated from xcresulttool format description.
 
@@ -767,6 +872,7 @@ class ActionTestActivitySummary(XcresultObject):
         + subactivities: [ActionTestActivitySummary]
         + failureSummaryIDs: [String]
         + expectedFailureIDs: [String]
+        + warningSummaryIDs: [String]
     """
 
     title: str
@@ -778,6 +884,7 @@ class ActionTestActivitySummary(XcresultObject):
     subactivities: List["ActionTestActivitySummary"]
     failureSummaryIDs: List[str]
     expectedFailureIDs: List[str]
+    warningSummaryIDs: List[str]
 
 
 class ActionTestMetadata(ActionTestSummaryIdentifiableObject):
@@ -870,6 +977,20 @@ class ActivityLogSection(XcresultObject):
     messages: List[ActivityLogMessage]
 
 
+class ConsoleLogSection(XcresultObject):
+    """Generated from xcresulttool format description.
+
+    - ConsoleLogSection
+      * Kind: object
+      * Properties:
+        + title: String
+        + items: [ConsoleLogItem]
+    """
+
+    title: str
+    items: List[ConsoleLogItem]
+
+
 class ResultIssueSummaries(XcresultObject):
     """Generated from xcresulttool format description.
 
@@ -880,12 +1001,14 @@ class ResultIssueSummaries(XcresultObject):
         + errorSummaries: [IssueSummary]
         + testFailureSummaries: [TestFailureIssueSummary]
         + warningSummaries: [IssueSummary]
+        + testWarningSummaries: [TestIssueSummary]
     """
 
     analyzerWarningSummaries: List[IssueSummary]
     errorSummaries: List[IssueSummary]
     testFailureSummaries: List[TestFailureIssueSummary]
     warningSummaries: List[IssueSummary]
+    testWarningSummaries: List[TestIssueSummary]
 
 
 class SourceCodeFrame(XcresultObject):
@@ -917,6 +1040,7 @@ class ActionResult(XcresultObject):
         + logRef: Reference?
         + testsRef: Reference?
         + diagnosticsRef: Reference?
+        + consoleLogRef: Reference?
     """
 
     resultName: str
@@ -928,6 +1052,7 @@ class ActionResult(XcresultObject):
     logRef: Optional[Reference]
     testsRef: Optional[Reference]
     diagnosticsRef: Optional[Reference]
+    consoleLogRef: Optional[Reference]
 
 
 class ActivityLogCommandInvocationSection(ActivityLogSection):
@@ -1017,6 +1142,7 @@ class ActionRecord(XcresultObject):
         + runDestination: ActionRunDestinationRecord
         + buildResult: ActionResult
         + actionResult: ActionResult
+        + testPlanName: String?
     """
 
     schemeCommandName: str
@@ -1027,6 +1153,7 @@ class ActionRecord(XcresultObject):
     runDestination: ActionRunDestinationRecord
     buildResult: ActionResult
     actionResult: ActionResult
+    testPlanName: Optional[str]
 
 
 class ActionTestFailureSummary(XcresultObject):
@@ -1061,6 +1188,36 @@ class ActionTestFailureSummary(XcresultObject):
     sourceCodeContext: Optional[SourceCodeContext]
     timestamp: Optional[datetime.datetime]
     isTopLevelFailure: bool
+
+
+class ActionTestIssueSummary(XcresultObject):
+    """Generated from xcresulttool format description.
+
+    - ActionTestIssueSummary
+      * Kind: object
+      * Properties:
+        + message: String?
+        + fileName: String
+        + lineNumber: Int
+        + uuid: String
+        + issueType: String?
+        + detailedDescription: String?
+        + attachments: [ActionTestAttachment]
+        + associatedError: TestAssociatedError?
+        + sourceCodeContext: SourceCodeContext?
+        + timestamp: Date?
+    """
+
+    message: Optional[str]
+    fileName: str
+    lineNumber: int
+    uuid: str
+    issueType: Optional[str]
+    detailedDescription: Optional[str]
+    attachments: List[ActionTestAttachment]
+    associatedError: Optional[TestAssociatedError]
+    sourceCodeContext: Optional[SourceCodeContext]
+    timestamp: Optional[datetime.datetime]
 
 
 class ActivityLogTargetBuildSection(ActivityLogMajorSection):
@@ -1101,6 +1258,7 @@ class ActionTestableSummary(ActionAbstractTestSummary):
       * Supertype: ActionAbstractTestSummary
       * Kind: object
       * Properties:
+        + identifierURL: String?
         + projectRelativePath: String?
         + targetName: String?
         + testKind: String?
@@ -1111,6 +1269,7 @@ class ActionTestableSummary(ActionAbstractTestSummary):
         + testRegion: String?
     """
 
+    identifierURL: Optional[str]
     projectRelativePath: Optional[str]
     targetName: Optional[str]
     testKind: Optional[str]
@@ -1170,6 +1329,7 @@ class ActionTestSummary(ActionTestSummaryIdentifiableObject):
         + activitySummaries: [ActionTestActivitySummary]
         + repetitionPolicySummary: ActionTestRepetitionPolicySummary?
         + configuration: ActionTestConfiguration?
+        + warningSummaries: [ActionTestIssueSummary]
     """
 
     testStatus: str
@@ -1181,6 +1341,7 @@ class ActionTestSummary(ActionTestSummaryIdentifiableObject):
     activitySummaries: List[ActionTestActivitySummary]
     repetitionPolicySummary: Optional[ActionTestRepetitionPolicySummary]
     configuration: Optional[ActionTestConfiguration]
+    warningSummaries: List[ActionTestIssueSummary]
 
 
 class ActionTestPlanRunSummaries(XcresultObject):
@@ -1201,7 +1362,9 @@ _MODEL_NAMES = [m for m in _MODEL_NAMES if not m.startswith("__")]
 _RESOLVED_MODELS = [getattr(_CURRENT_MODULE, m) for m in _MODEL_NAMES]
 # pylint: disable=unidiomatic-typecheck
 _RESOLVED_MODELS = [
-    m for m in _RESOLVED_MODELS if type(m) == type(type) and issubclass(m, XcresultObject)
+    m
+    for m in _RESOLVED_MODELS
+    if type(m) == type(type) and issubclass(m, XcresultObject)
 ]
 # pylint: enable=unidiomatic-typecheck
 MODELS = {m.__name__: m for m in _RESOLVED_MODELS}
