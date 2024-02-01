@@ -8,16 +8,13 @@ import subprocess
 from typing import Any, cast, Dict, get_type_hints, Optional
 
 from xcresult import model
+from xcresult.exceptions import UnsupportedTypeException, MissingPropertyException
 from xcresult.model import (
     ActionsInvocationRecord,
     ActionTestPlanRunSummaries,
     ActionTestSummary,
     ActionTestSummaryGroup,
 )
-
-
-class UnsupportedType(Exception):
-    """A new and, as yet, unsupported type."""
 
 
 # pylint: disable=too-many-return-statements
@@ -58,14 +55,14 @@ def deserialize(data: Dict[str, Any]) -> Any:
     xc_class = model.MODELS.get(type_name)
 
     if xc_class is None:
-        raise UnsupportedType()
+        raise UnsupportedTypeException()
 
     instance = xc_class.__new__(xc_class)
 
     for key, value in data.items():
         try:
             setattr(instance, key, deserialize(value))
-        except UnsupportedType:
+        except UnsupportedTypeException:
             logging.warning(
                 f"Found unsupported property on {type_name} when deserializing: {key}"
             )
@@ -231,32 +228,37 @@ def export_action_test_summary_group(
 
     relative_path = test.identifierURL.replace("test://com.apple.xcode/", "")
 
-    for activity_summary in data.activitySummaries:
-        if activity_summary.attachments is None:
-            continue
-        for attachment in activity_summary.attachments:
-            if attachment.payloadRef is None:
+    if data.activitySummaries:
+        for activity_summary in data.activitySummaries:
+            if activity_summary.attachments is None:
                 continue
-            identifier = attachment.payloadRef.id
-            export_attachment(
-                results_path,
-                identifier,
-                "file",
-                os.path.join(
-                    output_path, "summary", relative_path, attachment.filename
-                ),
-            )
+            for attachment in activity_summary.attachments:
+                if attachment.payloadRef is None:
+                    continue
+                identifier = attachment.payloadRef.id
+                export_attachment(
+                    results_path,
+                    identifier,
+                    "file",
+                    os.path.join(
+                        output_path, "summary", relative_path, attachment.filename
+                    ),
+                )
 
-    for summary in data.failureSummaries:
-        for attachment in summary.attachments:
-            if attachment.payloadRef is None:
-                continue
-            identifier = attachment.payloadRef.id
-            export_attachment(
-                results_path,
-                identifier,
-                "file",
-                os.path.join(
-                    output_path, "failure", relative_path, attachment.filename
-                ),
-            )
+    if data.failureSummaries:
+        for summary in data.failureSummaries:
+            if summary.attachments is None:
+                raise MissingPropertyException("No attachments found")
+
+            for attachment in summary.attachments:
+                if attachment.payloadRef is None:
+                    continue
+                identifier = attachment.payloadRef.id
+                export_attachment(
+                    results_path,
+                    identifier,
+                    "file",
+                    os.path.join(
+                        output_path, "failure", relative_path, attachment.filename
+                    ),
+                )

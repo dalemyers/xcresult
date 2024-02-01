@@ -2,6 +2,7 @@
 
 from typing import Any, Optional
 
+from xcresult.exceptions import MissingPropertyException
 from xcresult.model import *
 from xcresult.xcresulttool import (
     deserialize,
@@ -56,10 +57,26 @@ class Xcresults:
 
     def export_test_attachments(self, output_path: str):
         """Export all test attachments."""
+        if not self.actions_invocation_record:
+            raise MissingPropertyException("No actions invocation record found")
+
+        if not self.actions_invocation_record.actions:
+            raise MissingPropertyException("No actions found")
+
         for action in self.actions_invocation_record.actions:
             test_id = action.actionResult.testsRef.id
             summaries = deserialize(self.get(test_id))
+
+            if not summaries.summaries:
+                raise MissingPropertyException("No summaries found")
+
             for summary in summaries.summaries:
+                if not summary.testableSummaries:
+                    raise MissingPropertyException("No testable summaries found")
+
                 for testable_summary in summary.testableSummaries:
+                    if not testable_summary.tests:
+                        raise MissingPropertyException("No tests found")
+
                     for test in testable_summary.tests:
                         export_action_test_summary_group(self.path, test, output_path)
