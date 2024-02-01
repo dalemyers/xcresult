@@ -5,15 +5,11 @@ import json
 import logging
 import os
 import subprocess
-from typing import Any, cast, Dict, get_type_hints, List, Optional, Tuple
+from typing import Any, cast, Dict, get_type_hints, Optional
 
 from xcresult import model
 from xcresult.model import (
     ActionsInvocationRecord,
-    ActionRecord,
-    ActionTestableSummary,
-    ActionTestAttachment,
-    ActionTestMetadata,
     ActionTestPlanRunSummaries,
     ActionTestSummary,
     ActionTestSummaryGroup,
@@ -57,7 +53,7 @@ def deserialize(data: Dict[str, Any]) -> Any:
             return data["_value"].lower() == "true"
         if type_name == "Date":
             return datetime.datetime.strptime(data["_value"], "%Y-%m-%dT%H:%M:%S.%f%z")
-        raise Exception("Unknown type: " + type_name)
+        raise ValueError("Unknown type: " + type_name)
 
     xc_class = model.MODELS.get(type_name)
 
@@ -70,7 +66,9 @@ def deserialize(data: Dict[str, Any]) -> Any:
         try:
             setattr(instance, key, deserialize(value))
         except UnsupportedType:
-            logging.warning(f"Found unsupported property on {type_name} when deserializing: {key}")
+            logging.warning(
+                f"Found unsupported property on {type_name} when deserializing: {key}"
+            )
             continue
 
     for property_name, property_type in get_type_hints(xc_class).items():
@@ -96,7 +94,7 @@ def deserialize(data: Dict[str, Any]) -> Any:
                 continue
 
             if not str(property_type).startswith("typing.Optional["):
-                raise Exception()
+                raise ValueError()
 
             setattr(instance, property_name, None)
 
@@ -107,7 +105,7 @@ def deserialize(data: Dict[str, Any]) -> Any:
 # pylint: enable=too-many-branches
 
 
-def _get(path: str, identifier: Optional[str] = None) -> Dict[str, Any]:
+def get(path: str, identifier: Optional[str] = None) -> Dict[str, Any]:
     """Get the some xcresult info.
 
     :param path: The path to the xcresult bundle
@@ -170,11 +168,13 @@ def get_actions_invocation_record(path) -> ActionsInvocationRecord:
 
     :returns: The deserialized data
     """
-    object_data = _get(path)
+    object_data = get(path)
     return cast(ActionsInvocationRecord, deserialize(object_data))
 
 
-def get_test_plan_run_summaries(path: str, identifier: str) -> ActionTestPlanRunSummaries:
+def get_test_plan_run_summaries(
+    path: str, identifier: str
+) -> ActionTestPlanRunSummaries:
     """Get an ActionTestPlanRunSummaries.
 
     :param path: The path to the xcresult bundle
@@ -182,7 +182,7 @@ def get_test_plan_run_summaries(path: str, identifier: str) -> ActionTestPlanRun
 
     :returns: The deserialized data
     """
-    object_data = _get(path, identifier)
+    object_data = get(path, identifier)
     return cast(ActionTestPlanRunSummaries, deserialize(object_data))
 
 
@@ -194,125 +194,69 @@ def get_action_test_summary(path: str, identifier: str) -> ActionTestSummary:
 
     :returns: The deserialized data
     """
-    object_data = _get(path, identifier)
+    object_data = get(path, identifier)
     return cast(ActionTestSummary, deserialize(object_data))
 
 
-def _get_attachments_for_action_testable_summary(
-    path: str,
-    testable_summary: ActionTestableSummary,
-) -> List[Tuple[ActionTestMetadata, ActionTestAttachment]]:
-    """Get all attachments in an action.
-
-    :param path: The path to the xcresult bundle
-    :param testable_summary: The action testable summary to get the attachments for
-
-    :returns: A list of test attachments (with the test metadata)
-    """
-
-    attachments: List[Tuple[ActionTestMetadata, ActionTestAttachment]] = []
-
-    tests = []
-    test_stack = testable_summary.tests
-    while len(test_stack) > 0:
-        test = test_stack.pop(0)
-        if isinstance(test, ActionTestSummaryGroup):
-            group = cast(ActionTestSummaryGroup, test)
-            for subtest in group.subtests or []:
-                test_stack.append(subtest)
-        else:
-            tests.append(test)
-
-    tests = [test for test in tests if isinstance(test, ActionTestMetadata)]
-    test_metadata = cast(List[ActionTestMetadata], tests)
-    test_summary_references = [
-        (test, test.summaryRef) for test in test_metadata if test.summaryRef is not None
-    ]
-
-    for test, summary in test_summary_references:
-        full_summary = get_action_test_summary(path, summary.id)
-        if full_summary.activitySummaries is not None:
-            for activity_summary in full_summary.activitySummaries:
-                if activity_summary.attachments is not None:
-                    for attachment in activity_summary.attachments:
-                        attachments.append((test, attachment))
-
-    return attachments
-
-
-def _get_attachments_for_action(
-    path: str,
-    action: ActionRecord,
-) -> Optional[List[Tuple[ActionTestMetadata, ActionTestAttachment]]]:
-    """Get all attachments in an action.
-
-    :param path: The path to the xcresult bundle
-    :param action: The action to get the attachments for
-
-    :returns: A list of test attachments (with the test metadata)
-    """
-
-    attachments: List[Tuple[ActionTestMetadata, ActionTestAttachment]] = []
-
-    test_ref = action.actionResult.testsRef
-
-    if test_ref is None:
-        return None
-
-    test_plan_run_summaries = get_test_plan_run_summaries(path, test_ref.id)
-
-    for test_plan_run_summary in test_plan_run_summaries.summaries:
-        for testable_summary in test_plan_run_summary.testableSummaries:
-            attachments.extend(_get_attachments_for_action_testable_summary(path, testable_summary))
-
-    return attachments
-
-
-def export_attachments(path: str, output_folder: str) -> None:
-    """Get all attachments in an xcresult bundle.
-
-    The attachments will be placed into the `output_folder` with a sub-folder
-    for each test class, and a sub-folder for each test within that class.
+def export_attachment(
+    path: str, identifier: str, type_identifier: str, output_path
+) -> None:
+    """Get an attachment from an xcresult bundle.
 
     The name will be the attachment name generated if available.
 
     :param path: The path of the xcresult bundle
+    :param identifier: The identifier of the attachment to export
+    :param type_identifier: The type of the attachment to export (.e.g. 'public.png')
     :param output_folder: The output folder to write the attachments to
     """
 
-    invocation_record = get_actions_invocation_record(path)
-    actions = [
-        action for action in invocation_record.actions if action.actionResult.testsRef is not None
-    ]
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
+    _export(path, identifier, type_identifier, output_path)
 
-    attachments = []
 
-    for action in actions:
-        action_attachments = _get_attachments_for_action(path, action)
-        if action_attachments is None:
+def export_action_test_summary_group(
+    results_path: str,
+    test: model.ActionTestSummaryIdentifiableObject,
+    output_path: str,
+) -> None:
+    """Handle an ActionTestSummaryGroup."""
+    if isinstance(test, ActionTestSummaryGroup):
+        for subtest in test.subtests or []:
+            export_action_test_summary_group(results_path, subtest, output_path)
+        return
+
+    identifier = test.summaryRef.id
+    data = deserialize(get(results_path, identifier))
+
+    relative_path = test.identifierURL.replace("test://com.apple.xcode/", "")
+
+    for activity_summary in data.activitySummaries:
+        if activity_summary.attachments is None:
             continue
-        attachments.extend(action_attachments)
+        for attachment in activity_summary.attachments:
+            if attachment.payloadRef is None:
+                continue
+            identifier = attachment.payloadRef.id
+            export_attachment(
+                results_path,
+                identifier,
+                "file",
+                os.path.join(
+                    output_path, "summary", relative_path, attachment.filename
+                ),
+            )
 
-    for index, (test, attachment) in enumerate(attachments):
-        if attachment.payloadRef is None:
-            continue
-
-        identifier = attachment.payloadRef.id
-
-        if test.identifier is None:
-            test_identifier = f"Unknown_Identifier_{index}"
-        else:
-            test_identifier = test.identifier
-
-        folder_name = os.path.join(output_folder, test_identifier)
-
-        if attachment.filename is None:
-            filename = test_identifier
-        else:
-            filename = attachment.filename
-
-        if folder_name.endswith("()"):
-            folder_name = folder_name[:-2]
-
-        os.makedirs(folder_name, exist_ok=True)
-        _export(path, identifier, "file", os.path.join(folder_name, filename))
+    for summary in data.failureSummaries:
+        for attachment in summary.attachments:
+            if attachment.payloadRef is None:
+                continue
+            identifier = attachment.payloadRef.id
+            export_attachment(
+                results_path,
+                identifier,
+                "file",
+                os.path.join(
+                    output_path, "failure", relative_path, attachment.filename
+                ),
+            )

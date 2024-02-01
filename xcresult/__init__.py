@@ -1,14 +1,15 @@
 """A module for dealing with xcresults."""
 
-import datetime
-import json
-import os
-import subprocess
-from typing import Any, cast, Dict, get_type_hints, List, Optional, Tuple
+from typing import Any, Optional
 
-from xcresult import model
 from xcresult.model import *
-from xcresult.xcresulttool import export_attachments, get_actions_invocation_record
+from xcresult.xcresulttool import (
+    deserialize,
+    export_attachment,
+    get_actions_invocation_record,
+    get,
+    export_action_test_summary_group,
+)
 
 
 class Xcresults:
@@ -34,14 +35,31 @@ class Xcresults:
             assert self._actions_invocation_record is not None
         return self._actions_invocation_record
 
-    def export_attachments(self, output_folder: str) -> None:
-        """Export all attachments in an xcresult bundle.
+    def export_attachment(
+        self, identifier: str, type_identifier: str, output_path: str
+    ) -> None:
+        """Get an attachment from an xcresult bundle.
 
-        The attachments will be placed into the `output_folder` with a sub-folder
-        for each test class, and a sub-folder for each test within that class.
-
-        The name will be the attachment name generated if available.
-
-        :param output_folder: The output folder to write the attachments to
+        :param path: The path of the xcresult bundle
+        :param identifier: The identifier of the attachment to export
+        :param type_identifier: The type of the attachment to export (.e.g. 'public.png')
+        :param output_path: The output path to write the attachment to
         """
-        export_attachments(self.path, output_folder)
+        export_attachment(self.path, identifier, type_identifier, output_path)
+
+    def get(self, identifier: str) -> dict[str, Any]:
+        """Run a get command on bundle with the given id.
+
+        :param id: The ID of the item to get.
+        """
+        return get(self.path, identifier)
+
+    def export_test_attachments(self, output_path: str):
+        """Export all test attachments."""
+        for action in self.actions_invocation_record.actions:
+            test_id = action.actionResult.testsRef.id
+            summaries = deserialize(self.get(test_id))
+            for summary in summaries.summaries:
+                for testable_summary in summary.testableSummaries:
+                    for test in testable_summary.tests:
+                        export_action_test_summary_group(self.path, test, output_path)
