@@ -218,6 +218,10 @@ def export_action_test_summary_group(
     output_path: str,
 ) -> None:
     """Handle an ActionTestSummaryGroup."""
+    if test.identifierURL is None:
+        # This happens if there was an error during the test
+        return
+
     if isinstance(test, ActionTestSummaryGroup):
         for subtest in test.subtests or []:
             export_action_test_summary_group(results_path, subtest, output_path)
