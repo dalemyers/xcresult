@@ -252,7 +252,7 @@ def export_action_test_summary_group(
     if data.failureSummaries:
         for summary in data.failureSummaries:
             if summary.attachments is None:
-                raise MissingPropertyException("No attachments found")
+                continue
 
             for attachment in summary.attachments:
                 if attachment.payloadRef is None:
