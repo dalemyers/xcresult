@@ -218,6 +218,11 @@ def export_action_test_summary_group(
     output_path: str,
 ) -> None:
     """Handle an ActionTestSummaryGroup."""
+
+    if isinstance(test, model.ActionTestMetadata) and test.testStatus == "Skipped":
+        # If it was skipped, there is no data to export
+        return
+
     if test.identifierURL is None:
         # This happens if there was an error during the test
         return
