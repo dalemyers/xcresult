@@ -2,7 +2,7 @@
 
 import datetime
 import sys
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 import urllib.parse
 
 
@@ -97,7 +97,7 @@ class DocumentLocation(XcresultObject):
 
         :returns: The path of the document
         """
-        return self.url.split("#")[0].replace("file://", "")
+        return self.url.split("#", maxsplit=1)[0].replace("file://", "")
 
     @property
     def location(self) -> str:
@@ -108,14 +108,14 @@ class DocumentLocation(XcresultObject):
         return self.url.split("#")[1]
 
     @property
-    def location_details(self) -> Dict[str, List[str]]:
+    def location_details(self) -> dict[str, list[str]]:
         """Get the raw location parameters inside the document
 
         :returns: The location parametersinside the document
         """
         return urllib.parse.parse_qs(self.location)
 
-    def _get_property(self, key: str, *, offset: int = 0) -> Optional[int]:
+    def _get_property(self, key: str, *, offset: int = 0) -> int | None:
         """Get a property from the location details.
 
         :param key: The key for the property
@@ -137,7 +137,7 @@ class DocumentLocation(XcresultObject):
         return int(self.location_details["CharacterRangeLen"][0]) + 1
 
     @property
-    def character_range_location(self) -> Optional[int]:
+    def character_range_location(self) -> int | None:
         """Get the character range location if set, None otherwise
 
         :returns: The character range location
@@ -145,7 +145,7 @@ class DocumentLocation(XcresultObject):
         return self._get_property("CharacterRangeLoc")
 
     @property
-    def ending_column_number(self) -> Optional[int]:
+    def ending_column_number(self) -> int | None:
         """Get the ending column number if set, None otherwise
 
         :returns: The ending column number
@@ -153,7 +153,7 @@ class DocumentLocation(XcresultObject):
         return self._get_property("EndingColumnNumber", offset=1)
 
     @property
-    def ending_line_number(self) -> Optional[int]:
+    def ending_line_number(self) -> int | None:
         """Get the ending line number if set, None otherwise
 
         :returns: The ending line number
@@ -161,7 +161,7 @@ class DocumentLocation(XcresultObject):
         return self._get_property("EndingLineNumber", offset=1)
 
     @property
-    def location_encoding(self) -> Optional[int]:
+    def location_encoding(self) -> int | None:
         """Get the location encoding if set, None otherwise
 
         :returns: The location encoding
@@ -169,7 +169,7 @@ class DocumentLocation(XcresultObject):
         return self._get_property("LocationEncoding")
 
     @property
-    def starting_column_number(self) -> Optional[int]:
+    def starting_column_number(self) -> int | None:
         """Get the starting column number if set, None otherwise
 
         :returns: The starting column number
@@ -177,7 +177,7 @@ class DocumentLocation(XcresultObject):
         return self._get_property("StartingColumnNumber", offset=1)
 
     @property
-    def starting_line_number(self) -> Optional[int]:
+    def starting_line_number(self) -> int | None:
         """Get the starting line number if set, None otherwise
 
         :returns: The starting line number
@@ -285,7 +285,7 @@ class ActionAbstractTestSummary(XcresultObject):
         + name: String?
     """
 
-    name: Optional[str]
+    name: str | None
 
 
 class ActionDeviceRecord(XcresultObject):
@@ -325,12 +325,12 @@ class ActionDeviceRecord(XcresultObject):
     identifier: str
     isWireless: bool
     cpuKind: str
-    cpuCount: Optional[int]
-    cpuSpeedInMHz: Optional[int]
-    busSpeedInMHz: Optional[int]
-    ramSizeInMegabytes: Optional[int]
-    physicalCPUCoresPerPackage: Optional[int]
-    logicalCPUCoresPerPackage: Optional[int]
+    cpuCount: int | None
+    cpuSpeedInMHz: int | None
+    busSpeedInMHz: int | None
+    ramSizeInMegabytes: int | None
+    physicalCPUCoresPerPackage: int | None
+    logicalCPUCoresPerPackage: int | None
     platformRecord: ActionPlatformRecord
 
 
@@ -346,10 +346,10 @@ class ActionTestNoticeSummary(XcresultObject):
         + timestamp: Date?
     """
 
-    message: Optional[str]
+    message: str | None
     fileName: str
     lineNumber: int
-    timestamp: Optional[datetime.datetime]
+    timestamp: datetime.datetime | None
 
 
 class ActionTestPerformanceMetricSummary(XcresultObject):
@@ -373,15 +373,15 @@ class ActionTestPerformanceMetricSummary(XcresultObject):
 
     displayName: str
     unitOfMeasurement: str
-    measurements: List[float]
-    identifier: Optional[str]
-    baselineName: Optional[str]
-    baselineAverage: Optional[float]
-    maxPercentRegression: Optional[float]
-    maxPercentRelativeStandardDeviation: Optional[float]
-    maxRegression: Optional[float]
-    maxStandardDeviation: Optional[float]
-    polarity: Optional[str]
+    measurements: list[float]
+    identifier: str | None
+    baselineName: str | None
+    baselineAverage: float | None
+    maxPercentRegression: float | None
+    maxPercentRelativeStandardDeviation: float | None
+    maxRegression: float | None
+    maxStandardDeviation: float | None
+    polarity: str | None
 
 
 class ActionTestRepetitionPolicySummary(XcresultObject):
@@ -395,9 +395,9 @@ class ActionTestRepetitionPolicySummary(XcresultObject):
         + repetitionMode: String?
     """
 
-    iteration: Optional[int]
-    totalIterations: Optional[int]
-    repetitionMode: Optional[str]
+    iteration: int | None
+    totalIterations: int | None
+    repetitionMode: str | None
 
 
 class ActionsInvocationMetadata(XcresultObject):
@@ -413,7 +413,7 @@ class ActionsInvocationMetadata(XcresultObject):
 
     creatingWorkspaceFilePath: str
     uniqueIdentifier: str
-    schemeIdentifier: Optional[EntityIdentifier]
+    schemeIdentifier: EntityIdentifier | None
 
 
 class ActivityLogAnalyzerControlFlowStepEdge(XcresultObject):
@@ -426,8 +426,8 @@ class ActivityLogAnalyzerControlFlowStepEdge(XcresultObject):
         + endLocation: DocumentLocation?
     """
 
-    startLocation: Optional[DocumentLocation]
-    endLocation: Optional[DocumentLocation]
+    startLocation: DocumentLocation | None
+    endLocation: DocumentLocation | None
 
 
 class ActivityLogAnalyzerEventStep(ActivityLogAnalyzerStep):
@@ -444,7 +444,7 @@ class ActivityLogAnalyzerEventStep(ActivityLogAnalyzerStep):
     """
 
     title: str
-    location: Optional[DocumentLocation]
+    location: DocumentLocation | None
     description: str
     callDepth: int
 
@@ -460,7 +460,7 @@ class ActivityLogMessageAnnotation(XcresultObject):
     """
 
     title: str
-    location: Optional[DocumentLocation]
+    location: DocumentLocation | None
 
 
 class ArchiveInfo(XcresultObject):
@@ -472,7 +472,7 @@ class ArchiveInfo(XcresultObject):
         + path: String?
     """
 
-    path: Optional[str]
+    path: str | None
 
 
 class ConsoleLogItemLogData(XcresultObject):
@@ -499,22 +499,22 @@ class ConsoleLogItemLogData(XcresultObject):
         + timeZone: String?
     """
 
-    message: Optional[str]
-    subsystem: Optional[str]
-    category: Optional[str]
-    library: Optional[str]
-    format: Optional[str]
-    backtrace: Optional[str]
+    message: str | None
+    subsystem: str | None
+    category: str | None
+    library: str | None
+    format: str | None
+    backtrace: str | None
     pid: int
-    processName: Optional[str]
-    sessionUUID: Optional[str]
+    processName: str | None
+    sessionUUID: str | None
     tid: int
     messageType: int
-    senderImagePath: Optional[str]
-    senderImageUUID: Optional[str]
+    senderImagePath: str | None
+    senderImageUUID: str | None
     senderImageOffset: int
     unixTimeInterval: float
-    timeZone: Optional[str]
+    timeZone: str | None
 
 
 class IssueSummary(XcresultObject):
@@ -531,10 +531,10 @@ class IssueSummary(XcresultObject):
 
     issueType: str
     message: str
-    producingTarget: Optional[str]
-    documentLocationInCreatingWorkspace: Optional[DocumentLocation]
+    producingTarget: str | None
+    documentLocationInCreatingWorkspace: DocumentLocation | None
 
-    def pretty_message(self, path_prefix: Optional[str]) -> str:
+    def pretty_message(self, path_prefix: str | None) -> str:
         """Format the message nicely for review.
 
         :param path_prefix: Any path prefix to remove
@@ -563,7 +563,7 @@ class Reference(XcresultObject):
     """
 
     id: str
-    targetType: Optional[TypeDefinition]
+    targetType: TypeDefinition | None
 
 
 class ResultMetrics(XcresultObject):
@@ -587,7 +587,7 @@ class ResultMetrics(XcresultObject):
     testsFailedCount: int
     testsSkippedCount: int
     warningCount: int
-    totalCoveragePercentage: Optional[float]
+    totalCoveragePercentage: float | None
 
 
 class SortedKeyValueArray(XcresultObject):
@@ -599,7 +599,7 @@ class SortedKeyValueArray(XcresultObject):
         + storage: [SortedKeyValueArrayPair]
     """
 
-    storage: List[SortedKeyValueArrayPair]
+    storage: list[SortedKeyValueArrayPair]
 
 
 class SourceCodeLocation(XcresultObject):
@@ -612,8 +612,8 @@ class SourceCodeLocation(XcresultObject):
         + lineNumber: Int?
     """
 
-    filePath: Optional[str]
-    lineNumber: Optional[int]
+    filePath: str | None
+    lineNumber: int | None
 
 
 class ActionRunDestinationRecord(XcresultObject):
@@ -655,14 +655,14 @@ class ActionTestAttachment(XcresultObject):
     """
 
     uniformTypeIdentifier: str
-    name: Optional[str]
-    uuid: Optional[str]
-    timestamp: Optional[datetime.datetime]
-    userInfo: Optional[SortedKeyValueArray]
+    name: str | None
+    uuid: str | None
+    timestamp: datetime.datetime | None
+    userInfo: SortedKeyValueArray | None
     lifetime: str
     inActivityIdentifier: int
-    filename: Optional[str]
-    payloadRef: Optional[Reference]
+    filename: str | None
+    payloadRef: Reference | None
     payloadSize: int
 
 
@@ -689,8 +689,8 @@ class ActionTestSummaryIdentifiableObject(ActionAbstractTestSummary):
         + identifierURL: String?
     """
 
-    identifier: Optional[str]
-    identifierURL: Optional[str]
+    identifier: str | None
+    identifierURL: str | None
 
 
 class ActivityLogAnalyzerControlFlowStep(ActivityLogAnalyzerStep):
@@ -707,9 +707,9 @@ class ActivityLogAnalyzerControlFlowStep(ActivityLogAnalyzerStep):
     """
 
     title: str
-    startLocation: Optional[DocumentLocation]
-    endLocation: Optional[DocumentLocation]
-    edges: List[ActivityLogAnalyzerControlFlowStepEdge]
+    startLocation: DocumentLocation | None
+    endLocation: DocumentLocation | None
+    edges: list[ActivityLogAnalyzerControlFlowStepEdge]
 
 
 class ActivityLogMessage(XcresultObject):
@@ -728,10 +728,10 @@ class ActivityLogMessage(XcresultObject):
 
     type: str
     title: str
-    shortTitle: Optional[str]
-    category: Optional[str]
-    location: Optional[DocumentLocation]
-    annotations: List[ActivityLogMessageAnnotation]
+    shortTitle: str | None
+    category: str | None
+    location: DocumentLocation | None
+    annotations: list[ActivityLogMessageAnnotation]
 
 
 class CodeCoverageInfo(XcresultObject):
@@ -746,8 +746,8 @@ class CodeCoverageInfo(XcresultObject):
     """
 
     hasCoverageData: bool
-    reportRef: Optional[Reference]
-    archiveRef: Optional[Reference]
+    reportRef: Reference | None
+    archiveRef: Reference | None
 
 
 class ConsoleLogItem(XcresultObject):
@@ -763,11 +763,11 @@ class ConsoleLogItem(XcresultObject):
         + logData: ConsoleLogItemLogData?
     """
 
-    adaptorType: Optional[str]
-    kind: Optional[str]
+    adaptorType: str | None
+    kind: str | None
     timestamp: float
     content: str
-    logData: Optional[ConsoleLogItemLogData]
+    logData: ConsoleLogItemLogData | None
 
 
 class SourceCodeSymbolInfo(XcresultObject):
@@ -781,9 +781,9 @@ class SourceCodeSymbolInfo(XcresultObject):
         + location: SourceCodeLocation?
     """
 
-    imageName: Optional[str]
-    symbolName: Optional[str]
-    location: Optional[SourceCodeLocation]
+    imageName: str | None
+    symbolName: str | None
+    location: SourceCodeLocation | None
 
 
 class TestAssociatedError(XcresultObject):
@@ -797,9 +797,9 @@ class TestAssociatedError(XcresultObject):
         + userInfo: SortedKeyValueArray?
     """
 
-    domain: Optional[str]
-    code: Optional[int]
-    userInfo: Optional[SortedKeyValueArray]
+    domain: str | None
+    code: int | None
+    userInfo: SortedKeyValueArray | None
 
 
 class TestFailureIssueSummary(IssueSummary):
@@ -814,7 +814,7 @@ class TestFailureIssueSummary(IssueSummary):
 
     testCaseName: str
 
-    def pretty_message(self, path_prefix: Optional[str]) -> str:
+    def pretty_message(self, path_prefix: str | None) -> str:
         """Format the message nicely for review.
 
         :param path_prefix: Any path prefix to remove
@@ -878,13 +878,13 @@ class ActionTestActivitySummary(XcresultObject):
     title: str
     activityType: str
     uuid: str
-    start: Optional[datetime.datetime]
-    finish: Optional[datetime.datetime]
-    attachments: List[ActionTestAttachment]
-    subactivities: List["ActionTestActivitySummary"]
-    failureSummaryIDs: List[str]
-    expectedFailureIDs: List[str]
-    warningSummaryIDs: List[str]
+    start: datetime.datetime | None
+    finish: datetime.datetime | None
+    attachments: list[ActionTestAttachment]
+    subactivities: list["ActionTestActivitySummary"]
+    failureSummaryIDs: list[str]
+    expectedFailureIDs: list[str]
+    warningSummaryIDs: list[str]
 
 
 class ActionTestMetadata(ActionTestSummaryIdentifiableObject):
@@ -903,8 +903,8 @@ class ActionTestMetadata(ActionTestSummaryIdentifiableObject):
     """
 
     testStatus: str
-    duration: Optional[float]
-    summaryRef: Optional[Reference]
+    duration: float | None
+    summaryRef: Reference | None
     performanceMetricsCount: int
     failureSummariesCount: int
     activitySummariesCount: int
@@ -922,7 +922,7 @@ class ActionTestSummaryGroup(ActionTestSummaryIdentifiableObject):
     """
 
     duration: float
-    subtests: List[ActionTestSummaryIdentifiableObject]
+    subtests: list[ActionTestSummaryIdentifiableObject]
 
 
 class ActivityLogAnalyzerResultMessage(ActivityLogMessage):
@@ -937,8 +937,8 @@ class ActivityLogAnalyzerResultMessage(ActivityLogMessage):
         + keyEventIndex: Int
     """
 
-    steps: List[ActivityLogAnalyzerStep]
-    resultType: Optional[str]
+    steps: list[ActivityLogAnalyzerStep]
+    resultType: str | None
     keyEventIndex: int
 
 
@@ -969,12 +969,12 @@ class ActivityLogSection(XcresultObject):
 
     domainType: str
     title: str
-    startTime: Optional[datetime.datetime]
+    startTime: datetime.datetime | None
     duration: float
-    result: Optional[str]
-    location: Optional[DocumentLocation]
-    subsections: List["ActivityLogSection"]
-    messages: List[ActivityLogMessage]
+    result: str | None
+    location: DocumentLocation | None
+    subsections: list["ActivityLogSection"]
+    messages: list[ActivityLogMessage]
 
 
 class ConsoleLogSection(XcresultObject):
@@ -988,7 +988,7 @@ class ConsoleLogSection(XcresultObject):
     """
 
     title: str
-    items: List[ConsoleLogItem]
+    items: list[ConsoleLogItem]
 
 
 class ResultIssueSummaries(XcresultObject):
@@ -1004,11 +1004,11 @@ class ResultIssueSummaries(XcresultObject):
         + testWarningSummaries: [TestIssueSummary]
     """
 
-    analyzerWarningSummaries: List[IssueSummary]
-    errorSummaries: List[IssueSummary]
-    testFailureSummaries: List[TestFailureIssueSummary]
-    warningSummaries: List[IssueSummary]
-    testWarningSummaries: List[TestIssueSummary]
+    analyzerWarningSummaries: list[IssueSummary]
+    errorSummaries: list[IssueSummary]
+    testFailureSummaries: list[TestFailureIssueSummary]
+    warningSummaries: list[IssueSummary]
+    testWarningSummaries: list[TestIssueSummary]
 
 
 class SourceCodeFrame(XcresultObject):
@@ -1021,8 +1021,8 @@ class SourceCodeFrame(XcresultObject):
         + symbolInfo: SourceCodeSymbolInfo?
     """
 
-    addressString: Optional[str]
-    symbolInfo: Optional[SourceCodeSymbolInfo]
+    addressString: str | None
+    symbolInfo: SourceCodeSymbolInfo | None
 
 
 class ActionResult(XcresultObject):
@@ -1048,11 +1048,11 @@ class ActionResult(XcresultObject):
     metrics: ResultMetrics
     issues: ResultIssueSummaries
     coverage: CodeCoverageInfo
-    timelineRef: Optional[Reference]
-    logRef: Optional[Reference]
-    testsRef: Optional[Reference]
-    diagnosticsRef: Optional[Reference]
-    consoleLogRef: Optional[Reference]
+    timelineRef: Reference | None
+    logRef: Reference | None
+    testsRef: Reference | None
+    diagnosticsRef: Reference | None
+    consoleLogRef: Reference | None
 
 
 class ActivityLogCommandInvocationSection(ActivityLogSection):
@@ -1069,7 +1069,7 @@ class ActivityLogCommandInvocationSection(ActivityLogSection):
 
     commandDetails: str
     emittedOutput: str
-    exitCode: Optional[int]
+    exitCode: int | None
 
 
 class ActivityLogMajorSection(ActivityLogSection):
@@ -1103,15 +1103,15 @@ class ActivityLogUnitTestSection(ActivityLogSection):
         + runnableUTI: String?
     """
 
-    testName: Optional[str]
-    suiteName: Optional[str]
-    summary: Optional[str]
-    emittedOutput: Optional[str]
-    performanceTestOutput: Optional[str]
-    testsPassedString: Optional[str]
+    testName: str | None
+    suiteName: str | None
+    summary: str | None
+    emittedOutput: str | None
+    performanceTestOutput: str | None
+    testsPassedString: str | None
     wasSkipped: bool
-    runnablePath: Optional[str]
-    runnableUTI: Optional[str]
+    runnablePath: str | None
+    runnableUTI: str | None
 
 
 class SourceCodeContext(XcresultObject):
@@ -1124,8 +1124,8 @@ class SourceCodeContext(XcresultObject):
         + callStack: [SourceCodeFrame]
     """
 
-    location: Optional[SourceCodeLocation]
-    callStack: List[SourceCodeFrame]
+    location: SourceCodeLocation | None
+    callStack: list[SourceCodeFrame]
 
 
 class ActionRecord(XcresultObject):
@@ -1147,13 +1147,13 @@ class ActionRecord(XcresultObject):
 
     schemeCommandName: str
     schemeTaskName: str
-    title: Optional[str]
+    title: str | None
     startedTime: datetime.datetime
     endedTime: datetime.datetime
     runDestination: ActionRunDestinationRecord
     buildResult: ActionResult
     actionResult: ActionResult
-    testPlanName: Optional[str]
+    testPlanName: str | None
 
 
 class ActionTestFailureSummary(XcresultObject):
@@ -1176,17 +1176,17 @@ class ActionTestFailureSummary(XcresultObject):
         + isTopLevelFailure: Bool
     """
 
-    message: Optional[str]
+    message: str | None
     fileName: str
     lineNumber: int
     isPerformanceFailure: bool
     uuid: str
-    issueType: Optional[str]
-    detailedDescription: Optional[str]
-    attachments: List[ActionTestAttachment]
-    associatedError: Optional[TestAssociatedError]
-    sourceCodeContext: Optional[SourceCodeContext]
-    timestamp: Optional[datetime.datetime]
+    issueType: str | None
+    detailedDescription: str | None
+    attachments: list[ActionTestAttachment]
+    associatedError: TestAssociatedError | None
+    sourceCodeContext: SourceCodeContext | None
+    timestamp: datetime.datetime | None
     isTopLevelFailure: bool
 
 
@@ -1208,16 +1208,16 @@ class ActionTestIssueSummary(XcresultObject):
         + timestamp: Date?
     """
 
-    message: Optional[str]
+    message: str | None
     fileName: str
     lineNumber: int
     uuid: str
-    issueType: Optional[str]
-    detailedDescription: Optional[str]
-    attachments: List[ActionTestAttachment]
-    associatedError: Optional[TestAssociatedError]
-    sourceCodeContext: Optional[SourceCodeContext]
-    timestamp: Optional[datetime.datetime]
+    issueType: str | None
+    detailedDescription: str | None
+    attachments: list[ActionTestAttachment]
+    associatedError: TestAssociatedError | None
+    sourceCodeContext: SourceCodeContext | None
+    timestamp: datetime.datetime | None
 
 
 class ActivityLogTargetBuildSection(ActivityLogMajorSection):
@@ -1230,7 +1230,7 @@ class ActivityLogTargetBuildSection(ActivityLogMajorSection):
         + productType: String?
     """
 
-    productType: Optional[str]
+    productType: str | None
 
 
 class ActionTestExpectedFailure(XcresultObject):
@@ -1246,8 +1246,8 @@ class ActionTestExpectedFailure(XcresultObject):
     """
 
     uuid: str
-    failureReason: Optional[str]
-    failureSummary: Optional[ActionTestFailureSummary]
+    failureReason: str | None
+    failureSummary: ActionTestFailureSummary | None
     isTopLevelFailure: bool
 
 
@@ -1269,15 +1269,15 @@ class ActionTestableSummary(ActionAbstractTestSummary):
         + testRegion: String?
     """
 
-    identifierURL: Optional[str]
-    projectRelativePath: Optional[str]
-    targetName: Optional[str]
-    testKind: Optional[str]
-    tests: List[ActionTestSummaryIdentifiableObject]
-    diagnosticsDirectoryName: Optional[str]
-    failureSummaries: List[ActionTestFailureSummary]
-    testLanguage: Optional[str]
-    testRegion: Optional[str]
+    identifierURL: str | None
+    projectRelativePath: str | None
+    targetName: str | None
+    testKind: str | None
+    tests: list[ActionTestSummaryIdentifiableObject]
+    diagnosticsDirectoryName: str | None
+    failureSummaries: list[ActionTestFailureSummary]
+    testLanguage: str | None
+    testRegion: str | None
 
 
 class ActionsInvocationRecord(XcresultObject):
@@ -1293,11 +1293,11 @@ class ActionsInvocationRecord(XcresultObject):
         + archive: ArchiveInfo?
     """
 
-    metadataRef: Optional[Reference]
+    metadataRef: Reference | None
     metrics: ResultMetrics
     issues: ResultIssueSummaries
-    actions: List[ActionRecord]
-    archive: Optional[ArchiveInfo]
+    actions: list[ActionRecord]
+    archive: ArchiveInfo | None
 
 
 class ActionTestPlanRunSummary(ActionAbstractTestSummary):
@@ -1310,7 +1310,7 @@ class ActionTestPlanRunSummary(ActionAbstractTestSummary):
         + testableSummaries: [ActionTestableSummary]
     """
 
-    testableSummaries: List[ActionTestableSummary]
+    testableSummaries: list[ActionTestableSummary]
 
 
 class ActionTestSummary(ActionTestSummaryIdentifiableObject):
@@ -1334,14 +1334,14 @@ class ActionTestSummary(ActionTestSummaryIdentifiableObject):
 
     testStatus: str
     duration: float
-    performanceMetrics: List[ActionTestPerformanceMetricSummary]
-    failureSummaries: List[ActionTestFailureSummary]
-    expectedFailures: List[ActionTestExpectedFailure]
-    skipNoticeSummary: Optional[ActionTestNoticeSummary]
-    activitySummaries: List[ActionTestActivitySummary]
-    repetitionPolicySummary: Optional[ActionTestRepetitionPolicySummary]
-    configuration: Optional[ActionTestConfiguration]
-    warningSummaries: List[ActionTestIssueSummary]
+    performanceMetrics: list[ActionTestPerformanceMetricSummary]
+    failureSummaries: list[ActionTestFailureSummary]
+    expectedFailures: list[ActionTestExpectedFailure]
+    skipNoticeSummary: ActionTestNoticeSummary | None
+    activitySummaries: list[ActionTestActivitySummary]
+    repetitionPolicySummary: ActionTestRepetitionPolicySummary | None
+    configuration: ActionTestConfiguration | None
+    warningSummaries: list[ActionTestIssueSummary]
 
 
 class ActionTestPlanRunSummaries(XcresultObject):
@@ -1353,7 +1353,7 @@ class ActionTestPlanRunSummaries(XcresultObject):
         + summaries: [ActionTestPlanRunSummary]
     """
 
-    summaries: List[ActionTestPlanRunSummary]
+    summaries: list[ActionTestPlanRunSummary]
 
 
 _CURRENT_MODULE = sys.modules[__name__]

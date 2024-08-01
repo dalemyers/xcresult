@@ -5,7 +5,7 @@ import json
 import logging
 import os
 import subprocess
-from typing import Any, cast, Dict, get_type_hints, Optional
+from typing import Any, cast, get_type_hints
 
 from xcresult import model
 from xcresult.exceptions import UnsupportedTypeException, MissingPropertyException
@@ -19,7 +19,7 @@ from xcresult.model import (
 
 # pylint: disable=too-many-return-statements
 # pylint: disable=too-many-branches
-def deserialize(data: Dict[str, Any]) -> Any:
+def deserialize(data: dict[str, Any]) -> Any:
     """Deserialize the xcresulttool data into Python objects.
 
     :param data: The data to deserialize
@@ -86,11 +86,14 @@ def deserialize(data: Dict[str, Any]) -> Any:
                 setattr(instance, property_name, 0.0)
                 continue
 
-            if str(property_type).startswith("typing.List["):
+            if str(property_type).startswith("list["):
                 setattr(instance, property_name, None)
                 continue
 
-            if not str(property_type).startswith("typing.Optional["):
+            if not (
+                str(property_type).startswith("typing.Optional[")
+                or str(property_type).endswith(" | None")
+            ):
                 raise ValueError()
 
             setattr(instance, property_name, None)
@@ -102,7 +105,7 @@ def deserialize(data: Dict[str, Any]) -> Any:
 # pylint: enable=too-many-branches
 
 
-def get(path: str, identifier: Optional[str] = None) -> Dict[str, Any]:
+def get(path: str, identifier: str | None = None) -> dict[str, Any]:
     """Get the some xcresult info.
 
     :param path: The path to the xcresult bundle
@@ -123,7 +126,7 @@ def get(path: str, identifier: Optional[str] = None) -> Dict[str, Any]:
         encoding="utf-8",
     ).stdout
 
-    return cast(Dict[str, Any], json.loads(output))
+    return cast(dict[str, Any], json.loads(output))
 
 
 def _export(path: str, identifier: str, object_type: str, output_path: str):

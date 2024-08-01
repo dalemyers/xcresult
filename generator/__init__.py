@@ -2,28 +2,38 @@
 
 import os
 import subprocess
-from typing import List, Optional, Tuple
 
 
 DATA_TYPES = {
+    "Bool": "bool",
+    "Data": "bytes",
+    "Date": "datetime.datetime",
+    "Double": "float",
     "Int": "int",
-    "Int8": "int",
     "Int16": "int",
     "Int32": "int",
     "Int64": "int",
-    "UInt8": "int",
+    "Int8": "int",
+    "SchemaSerializable": "Any",
+    "String": "str",
     "UInt16": "int",
     "UInt32": "int",
     "UInt64": "int",
-    "String": "str",
-    "Double": "float",
-    "Bool": "bool",
-    "Date": "datetime.datetime",
-    "SchemaSerializable": "Any",
+    "UInt8": "int",
+    "URL": "str",
 }
 
 
 def get_indentation(line: str) -> int:
+    """Get the indentation level of a line.
+
+    Every 2 spaces counts as 1 level.
+
+    :param line: The line to check
+
+    :returns: The indentation level
+    """
+
     if len(line) == 0:
         return 0
 
@@ -39,11 +49,19 @@ def get_indentation(line: str) -> int:
     return int(count / 2)
 
 
-def dedent(lines) -> List[str]:
+def dedent(lines: list[str]) -> list[str]:
+    """Dedent a list of lines by one level.
+
+    :param lines: The lines to dedent
+
+    :returns: The dedented lines
+    """
     return [line[2:] for line in lines]
 
 
 class XcresultType:
+    """A class for converting xcresult types to Python types."""
+
     def __init__(self, original: str) -> None:
         self.original = original
         self.root_type = original
@@ -58,39 +76,43 @@ class XcresultType:
             self.root_type = self.root_type[:-1]
             self.is_optional = True
 
-    def python_type(self, name: str, container_type: str) -> Tuple[str, List[str]]:
-        output = ""
-        annotations = []
-        if self.is_list:
-            output += "List["
+    def python_type(self, container_type: str) -> str:
+        """Convert the xcresult type to a Python type.
 
-        if self.is_optional:
-            output += "Optional["
+        :param container_type: The name of the container type
+
+        :returns: The Python code for the type
+        """
 
         p_type = DATA_TYPES.get(self.root_type, self.root_type)
 
-        if p_type == container_type:
+        is_self_referential = p_type == container_type
+
+        if is_self_referential:
             p_type = f'"{p_type}"'
 
-        output += p_type
-
         if self.is_optional:
-            output += "]"
+            if is_self_referential:
+                p_type = f"Optional[{p_type}]"
+            else:
+                p_type = f"{p_type} | None"
 
         if self.is_list:
-            output += "]"
+            p_type = f"list[{p_type}]"
 
-        return output, annotations
+        return p_type
 
 
 class Definition:
+    """A class for representing a definition in the xcresulttool format description."""
+
     def __init__(
         self,
         name: str,
-        kind: Optional[str],
-        supertype: Optional[str],
-        properties: List[Tuple[str, str]],
-        original: Optional[List[str]] = None,
+        kind: str | None,
+        supertype: str | None,
+        properties: list[tuple[str, str]],
+        original: list[str] | None = None,
     ) -> None:
         self.name = name
         self.kind = kind
@@ -98,7 +120,11 @@ class Definition:
         self.properties = properties
         self.original = original
 
-    def dependency_types(self) -> List[str]:
+    def dependency_types(self) -> list[str]:
+        """Return a list of the types that this definition uses.
+
+        :returns: The list of types
+        """
         raw_types = list(map(lambda x: x[1], self.properties))
         if self.supertype:
             raw_types.append(self.supertype)
@@ -115,7 +141,11 @@ class Definition:
             )
         )
 
-    def python(self) -> str:
+    def python(self) -> list[str]:
+        """Convert this definition to Python code.
+
+        :returns: The Python code
+        """
         output = []
 
         if self.kind != "object":
@@ -140,8 +170,7 @@ class Definition:
 
         for name, ptype in self.properties:
             xctype = XcresultType(ptype)
-            python_type, annotations = xctype.python_type(name, self.name)
-            output = annotations + output
+            python_type = xctype.python_type(self.name)
             output.append(f"    {name}: {python_type}")
 
         additional_methods_path = os.path.join(
@@ -151,7 +180,9 @@ class Definition:
         )
         if os.path.exists(additional_methods_path):
             output.append("")
-            with open(additional_methods_path) as additional_methods_file:
+            with open(
+                additional_methods_path, encoding="utf-8"
+            ) as additional_methods_file:
                 for line in additional_methods_file.readlines():
                     stripped = line.rstrip()
                     if len(stripped) > 0:
@@ -162,7 +193,13 @@ class Definition:
         return output
 
     @staticmethod
-    def from_format_description(lines) -> "Definition":
+    def from_format_description(lines: list[str]) -> "Definition":
+        """Convert the output of xcrun xcresulttool formatDescription to a Definition.
+
+        :param lines: The lines to convert
+
+        :returns: The Definition
+        """
         lines = dedent(lines)
         original = lines[:]
         name_line = lines.pop(0)
@@ -200,7 +237,13 @@ class Definition:
         return Definition(name, kind, supertype, properties, original)
 
 
-def get_definitions(format_description) -> List[Definition]:
+def get_definitions(format_description: str) -> list[Definition]:
+    """Get the definitions from the output of xcrun xcresulttool formatDescription.
+
+    :param format_description: The output of xcrun xcresulttool formatDescription
+
+    :returns: The list of Definitions
+    """
     root_properties = {}
     definitions = [Definition("XcresultObject", "object", None, [])]
     buffer = []
@@ -231,7 +274,13 @@ def get_definitions(format_description) -> List[Definition]:
     return definitions
 
 
-def order_definitions(definitions: List[Definition]) -> List[Definition]:
+def order_definitions(definitions: list[Definition]) -> list[Definition]:
+    """Order definitions such that any dependencies are defined before they are used.
+
+    :param definitions: The definitions to order
+
+    :returns: The ordered definitions
+    """
     output = []
     definition_dict = {definition.name: definition for definition in definitions}
     dependency_types = {
@@ -267,6 +316,10 @@ def order_definitions(definitions: List[Definition]) -> List[Definition]:
 
 
 def generate(output_path: str):
+    """Generate the models for xcresulttool.
+
+    :param output_path: The path to write the models to
+    """
     output = subprocess.run(
         ["xcrun", "xcresulttool", "formatDescription"],
         check=True,
@@ -278,11 +331,11 @@ def generate(output_path: str):
     definitions = get_definitions(output)
     definitions = order_definitions(definitions)
 
-    with open(output_path, "w") as output_file:
+    with open(output_path, "w", encoding="utf-8") as output_file:
         output_file.write('"""Autogenerated models for xcresulttool."""\n\n')
         output_file.write("import datetime\n")
         output_file.write("import sys\n")
-        output_file.write("from typing import Any, Dict, List, Optional\n")
+        output_file.write("from typing import Any, Optional\n")
         output_file.write("import urllib.parse\n")
         output_file.write("\n\n")
         output_file.write("# pylint: disable=too-many-lines\n")

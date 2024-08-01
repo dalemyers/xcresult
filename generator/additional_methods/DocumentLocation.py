@@ -16,7 +16,7 @@ def path(self) -> str:
 
     :returns: The path of the document
     """
-    return self.url.split("#")[0].replace("file://", "")
+    return self.url.split("#", maxsplit=1)[0].replace("file://", "")
 
 
 @property
@@ -29,7 +29,7 @@ def location(self) -> str:
 
 
 @property
-def location_details(self) -> Dict[str, List[str]]:
+def location_details(self) -> dict[str, list[str]]:
     """Get the raw location parameters inside the document
 
     :returns: The location parametersinside the document
@@ -37,7 +37,7 @@ def location_details(self) -> Dict[str, List[str]]:
     return urllib.parse.parse_qs(self.location)
 
 
-def _get_property(self, key: str, *, offset: int = 0) -> Optional[int]:
+def _get_property(self, key: str, *, offset: int = 0) -> int | None:
     """Get a property from the location details.
 
     :param key: The key for the property
@@ -61,7 +61,7 @@ def character_range_length(self) -> int:
 
 
 @property
-def character_range_location(self) -> Optional[int]:
+def character_range_location(self) -> int | None:
     """Get the character range location if set, None otherwise
 
     :returns: The character range location
@@ -70,7 +70,7 @@ def character_range_location(self) -> Optional[int]:
 
 
 @property
-def ending_column_number(self) -> Optional[int]:
+def ending_column_number(self) -> int | None:
     """Get the ending column number if set, None otherwise
 
     :returns: The ending column number
@@ -79,7 +79,7 @@ def ending_column_number(self) -> Optional[int]:
 
 
 @property
-def ending_line_number(self) -> Optional[int]:
+def ending_line_number(self) -> int | None:
     """Get the ending line number if set, None otherwise
 
     :returns: The ending line number
@@ -88,7 +88,7 @@ def ending_line_number(self) -> Optional[int]:
 
 
 @property
-def location_encoding(self) -> Optional[int]:
+def location_encoding(self) -> int | None:
     """Get the location encoding if set, None otherwise
 
     :returns: The location encoding
@@ -97,7 +97,7 @@ def location_encoding(self) -> Optional[int]:
 
 
 @property
-def starting_column_number(self) -> Optional[int]:
+def starting_column_number(self) -> int | None:
     """Get the starting column number if set, None otherwise
 
     :returns: The starting column number
@@ -106,7 +106,7 @@ def starting_column_number(self) -> Optional[int]:
 
 
 @property
-def starting_line_number(self) -> Optional[int]:
+def starting_line_number(self) -> int | None:
     """Get the starting line number if set, None otherwise
 
     :returns: The starting line number

@@ -1,4 +1,4 @@
-def pretty_message(self, path_prefix: Optional[str]) -> str:
+def pretty_message(self, path_prefix: str | None) -> str:
     """Format the message nicely for review.
 
     :param path_prefix: Any path prefix to remove

@@ -1,6 +1,6 @@
 """A module for dealing with xcresults."""
 
-from typing import Any, Optional
+from typing import Any
 
 from xcresult.exceptions import MissingPropertyException
 from xcresult.model import *
@@ -17,7 +17,7 @@ class Xcresults:
     """Wrapper around an xcresults bundle."""
 
     path: str
-    _actions_invocation_record: Optional[ActionsInvocationRecord]
+    _actions_invocation_record: ActionsInvocationRecord | None
 
     def __init__(self, path: str) -> None:
         self.path = path
