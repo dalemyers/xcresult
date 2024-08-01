@@ -14,6 +14,51 @@ class XcresultObject:
     """Generated from xcresulttool format description."""
 
 
+# Defined Type: Bool
+
+
+# Defined Type: Data
+
+
+# Defined Type: Date
+
+
+# Defined Type: Double
+
+
+# Defined Type: Int
+
+
+# Defined Type: Int16
+
+
+# Defined Type: Int32
+
+
+# Defined Type: Int64
+
+
+# Defined Type: Int8
+
+
+# Defined Type: String
+
+
+# Defined Type: UInt16
+
+
+# Defined Type: UInt32
+
+
+# Defined Type: UInt64
+
+
+# Defined Type: UInt8
+
+
+# Defined Type: Array
+
+
 class ActionPlatformRecord(XcresultObject):
     """Generated from xcresulttool format description.
 
@@ -74,18 +119,6 @@ class ActivityLogSectionAttachment(XcresultObject):
     majorVersion: int
     minorVersion: int
     data: bytes
-
-
-# Defined Type: Array
-
-
-# Defined Type: Bool
-
-
-# Defined Type: Data
-
-
-# Defined Type: Date
 
 
 class DocumentLocation(XcresultObject):
@@ -206,9 +239,6 @@ class DocumentLocation(XcresultObject):
         return self._get_property("StartingLineNumber", offset=1)
 
 
-# Defined Type: Double
-
-
 class EntityIdentifier(XcresultObject):
     """Generated from xcresulttool format description.
 
@@ -225,21 +255,6 @@ class EntityIdentifier(XcresultObject):
     containerName: str
     entityType: str
     sharedState: str
-
-
-# Defined Type: Int
-
-
-# Defined Type: Int16
-
-
-# Defined Type: Int32
-
-
-# Defined Type: Int64
-
-
-# Defined Type: Int8
 
 
 class IssueTrackingMetadata(XcresultObject):
@@ -280,9 +295,6 @@ class SortedKeyValueArrayPair(XcresultObject):
     value: Any
 
 
-# Defined Type: String
-
-
 class TestDocumentation(XcresultObject):
     """Generated from xcresulttool format description.
 
@@ -309,18 +321,6 @@ class TypeDefinition(XcresultObject):
 
     name: str
     supertype: Optional["TypeDefinition"]
-
-
-# Defined Type: UInt16
-
-
-# Defined Type: UInt32
-
-
-# Defined Type: UInt64
-
-
-# Defined Type: UInt8
 
 
 class ActionAbstractTestSummary(XcresultObject):

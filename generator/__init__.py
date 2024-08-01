@@ -281,7 +281,7 @@ def order_definitions(definitions: list[Definition]) -> list[Definition]:
 
     :returns: The ordered definitions
     """
-    output = []
+    all_output = []
     definition_dict = {definition.name: definition for definition in definitions}
     dependency_types = {
         definition.name: set(definition.dependency_types())
@@ -290,10 +290,9 @@ def order_definitions(definitions: list[Definition]) -> list[Definition]:
 
     while len(dependency_types) > 0:
         keys_to_delete = []
+        output = []
 
-        for key in dependency_types.keys():
-            values = dependency_types[key]
-
+        for key, values in dependency_types.items():
             if len(values) > 1:
                 continue
 
@@ -312,7 +311,10 @@ def order_definitions(definitions: list[Definition]) -> list[Definition]:
 
             continue
 
-    return output
+        output.sort(key=lambda d: (0 if d.kind == "value" else 1, d.kind, d.name))
+        all_output.extend(output)
+
+    return all_output
 
 
 def generate(output_path: str):
