@@ -63,7 +63,9 @@ def deserialize(data: dict[str, Any]) -> Any:
         try:
             setattr(instance, key, deserialize(value))
         except UnsupportedTypeException:
-            logging.warning(f"Found unsupported property on {type_name} when deserializing: {key}")
+            logging.warning(
+                f"Found unsupported property on {type_name} when deserializing: {key}"
+            )
             continue
 
     for property_name, property_type in get_type_hints(xc_class).items():
@@ -115,6 +117,8 @@ def get(path: str, identifier: str | None = None) -> dict[str, Any]:
 
     if identifier:
         command += ["--id", identifier]
+
+    logging.debug("Running: %s", " ".join(command))
 
     output = subprocess.run(
         command,
@@ -170,7 +174,9 @@ def get_actions_invocation_record(path) -> ActionsInvocationRecord:
     return cast(ActionsInvocationRecord, deserialize(object_data))
 
 
-def get_test_plan_run_summaries(path: str, identifier: str) -> ActionTestPlanRunSummaries:
+def get_test_plan_run_summaries(
+    path: str, identifier: str
+) -> ActionTestPlanRunSummaries:
     """Get an ActionTestPlanRunSummaries.
 
     :param path: The path to the xcresult bundle
@@ -194,7 +200,9 @@ def get_action_test_summary(path: str, identifier: str) -> ActionTestSummary:
     return cast(ActionTestSummary, deserialize(object_data))
 
 
-def export_attachment(path: str, identifier: str, type_identifier: str, output_path) -> None:
+def export_attachment(
+    path: str, identifier: str, type_identifier: str, output_path
+) -> None:
     """Get an attachment from an xcresult bundle.
 
     The name will be the attachment name generated if available.
@@ -214,20 +222,32 @@ def export_action_test_summary_group(
     results_path: str,
     test: model.ActionTestSummaryIdentifiableObject,
     output_path: str,
+    log_depth: int = 0,
 ) -> None:
     """Handle an ActionTestSummaryGroup."""
 
+    log_prefix = "\t" * log_depth
+
     if isinstance(test, model.ActionTestMetadata) and test.testStatus == "Skipped":
         # If it was skipped, there is no data to export
+        logging.debug(
+            f"{log_prefix}Skipping processing test that was skipped: {test.identifier}"
+        )
         return
 
     if test.identifierURL is None:
         # This happens if there was an error during the test
+        logging.debug(
+            f"{log_prefix}Skipping processing test that had no identifier URL (usually due to an error during the test)"
+        )
         return
 
     if isinstance(test, ActionTestSummaryGroup):
         for subtest in test.subtests or []:
-            export_action_test_summary_group(results_path, subtest, output_path)
+            logging.info(f"{log_prefix}\tExporting subtest: {subtest.identifier}")
+            export_action_test_summary_group(
+                results_path, subtest, output_path, log_depth + 2
+            )
         return
 
     if not isinstance(test, model.ActionTestMetadata):
@@ -237,15 +257,19 @@ def export_action_test_summary_group(
         return
 
     identifier = test.summaryRef.id
-    data = deserialize(get(results_path, identifier))
+    data = cast(ActionTestSummary, deserialize(get(results_path, identifier)))
 
     relative_path = test.identifierURL.replace("test://com.apple.xcode/", "")
 
     if data.activitySummaries:
         for activity_summary in data.activitySummaries:
+            logging.info(
+                f"{log_prefix}\tExporting activity summary: {activity_summary.title}"
+            )
             if activity_summary.attachments is None:
                 continue
             for attachment in activity_summary.attachments:
+                logging.info(f"{log_prefix}\t\tExporting attachment: {attachment.name}")
                 if attachment.payloadRef is None:
                     continue
                 identifier = attachment.payloadRef.id
@@ -253,7 +277,9 @@ def export_action_test_summary_group(
                     results_path,
                     identifier,
                     "file",
-                    os.path.join(output_path, "summary", relative_path, attachment.filename),
+                    os.path.join(
+                        output_path, "summary", relative_path, attachment.filename
+                    ),
                 )
 
     if data.failureSummaries:
@@ -269,7 +295,9 @@ def export_action_test_summary_group(
                     results_path,
                     identifier,
                     "file",
-                    os.path.join(output_path, "failure", relative_path, attachment.filename),
+                    os.path.join(
+                        output_path, "failure", relative_path, attachment.filename
+                    ),
                 )
 
 

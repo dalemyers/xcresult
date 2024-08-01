@@ -1,6 +1,7 @@
 """A module for dealing with xcresults."""
 
-from typing import Any
+import logging
+from typing import Any, cast
 
 # This is the 'umbrella' import for the module so we need to import everything
 # pylint: disable=unused-import
@@ -40,11 +41,14 @@ class Xcresults:
         :returns: An ActionsInvocationRecord
         """
         if not self._actions_invocation_record:
+            logging.debug("Actions invocation record not found, fetching...")
             self._actions_invocation_record = get_actions_invocation_record(self.path)
             assert self._actions_invocation_record is not None
         return self._actions_invocation_record
 
-    def export_attachment(self, identifier: str, type_identifier: str, output_path: str) -> None:
+    def export_attachment(
+        self, identifier: str, type_identifier: str, output_path: str
+    ) -> None:
         """Get an attachment from an xcresult bundle.
 
         :param path: The path of the xcresult bundle
@@ -69,23 +73,45 @@ class Xcresults:
         if not self.actions_invocation_record.actions:
             raise MissingPropertyException("No actions found")
 
+        logging.info("Exporting test attachments")
+
         for action in self.actions_invocation_record.actions:
+            logging.info(
+                f"\tExporting action: {action.schemeCommandName} - {action.schemeTaskName} - {action.testPlanName}"
+            )
+
             if action.actionResult.testsRef is None:
+                logging.info("\tNo testRef set on action.actionResult, skipping.")
                 continue
 
             test_id = action.actionResult.testsRef.id
-            summaries = deserialize(self.get(test_id))
+            summaries = cast(ActionTestPlanRunSummaries, deserialize(self.get(test_id)))
 
             if not summaries.summaries:
                 raise MissingPropertyException("No summaries found")
 
             for summary in summaries.summaries:
+                logging.info(f"\t\tExporting summary: {summary.name}")
                 if not summary.testableSummaries:
                     raise MissingPropertyException("No testable summaries found")
 
                 for testable_summary in summary.testableSummaries:
+                    logging.info(
+                        f"\t\t\tExporting testable summary: {testable_summary.name}"
+                    )
+
                     if not testable_summary.tests:
                         raise MissingPropertyException("No tests found")
 
                     for test in testable_summary.tests:
-                        export_action_test_summary_group(self.path, test, output_path)
+                        logging.info(f"\t\t\t\tExporting test: {test.identifier}")
+                        export_action_test_summary_group(
+                            self.path, test, output_path, 5
+                        )
+
+
+x = Xcresults(
+    "/Users/dalemyers/Microsoft/OneDrive.iOS/iOS/product/build/OneDriveUnitTests_test_result.xcresult"
+)
+x.export_test_attachments("/Users/dalemyers/Downloads/attachments")
+print(x.actions_invocation_record)
