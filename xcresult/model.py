@@ -58,10 +58,31 @@ class ActivityLogAnalyzerStep(XcresultObject):
     parentIndex: int
 
 
+class ActivityLogSectionAttachment(XcresultObject):
+    """Generated from xcresulttool format description.
+
+    - ActivityLogSectionAttachment
+      * Kind: object
+      * Properties:
+        + identifier: String
+        + majorVersion: UInt8
+        + minorVersion: UInt8
+        + data: Data
+    """
+
+    identifier: str
+    majorVersion: int
+    minorVersion: int
+    data: bytes
+
+
 # Defined Type: Array
 
 
 # Defined Type: Bool
+
+
+# Defined Type: Data
 
 
 # Defined Type: Date
@@ -221,6 +242,18 @@ class EntityIdentifier(XcresultObject):
 # Defined Type: Int8
 
 
+class IssueTrackingMetadata(XcresultObject):
+    """Generated from xcresulttool format description.
+
+    - IssueTrackingMetadata
+      * Kind: object
+      * Properties:
+        + summary: String
+    """
+
+    summary: str
+
+
 class ObjectID(XcresultObject):
     """Generated from xcresulttool format description.
 
@@ -248,6 +281,20 @@ class SortedKeyValueArrayPair(XcresultObject):
 
 
 # Defined Type: String
+
+
+class TestDocumentation(XcresultObject):
+    """Generated from xcresulttool format description.
+
+    - TestDocumentation
+      * Kind: object
+      * Properties:
+        + content: String
+        + format: String
+    """
+
+    content: str
+    format: str
 
 
 class TypeDefinition(XcresultObject):
@@ -616,6 +663,38 @@ class SourceCodeLocation(XcresultObject):
     lineNumber: int | None
 
 
+class TestParameter(XcresultObject):
+    """Generated from xcresulttool format description.
+
+    - TestParameter
+      * Kind: object
+      * Properties:
+        + label: String
+        + name: String?
+        + typeName: String?
+    """
+
+    label: str
+    name: str | None
+    typeName: str | None
+
+
+class TestTag(XcresultObject):
+    """Generated from xcresulttool format description.
+
+    - TestTag
+      * Kind: object
+      * Properties:
+        + identifier: String
+        + name: String
+        + anchors: [String]
+    """
+
+    identifier: str
+    name: str
+    anchors: list[str]
+
+
 class ActionRunDestinationRecord(XcresultObject):
     """Generated from xcresulttool format description.
 
@@ -786,6 +865,26 @@ class SourceCodeSymbolInfo(XcresultObject):
     location: SourceCodeLocation | None
 
 
+class TestArgument(XcresultObject):
+    """Generated from xcresulttool format description.
+
+    - TestArgument
+      * Kind: object
+      * Properties:
+        + parameter: TestParameter?
+        + identifier: String?
+        + description: String
+        + debugDescription: String?
+        + typeName: String?
+    """
+
+    parameter: TestParameter | None
+    identifier: str | None
+    description: str
+    debugDescription: str | None
+    typeName: str | None
+
+
 class TestAssociatedError(XcresultObject):
     """Generated from xcresulttool format description.
 
@@ -919,10 +1018,20 @@ class ActionTestSummaryGroup(ActionTestSummaryIdentifiableObject):
       * Properties:
         + duration: Double
         + subtests: [ActionTestSummaryIdentifiableObject]
+        + skipNoticeSummary: ActionTestNoticeSummary?
+        + summary: String?
+        + documentation: [TestDocumentation]
+        + trackedIssues: [IssueTrackingMetadata]
+        + tags: [TestTag]
     """
 
     duration: float
     subtests: list[ActionTestSummaryIdentifiableObject]
+    skipNoticeSummary: ActionTestNoticeSummary | None
+    summary: str | None
+    documentation: list[TestDocumentation]
+    trackedIssues: list[IssueTrackingMetadata]
+    tags: list[TestTag]
 
 
 class ActivityLogAnalyzerResultMessage(ActivityLogMessage):
@@ -965,6 +1074,7 @@ class ActivityLogSection(XcresultObject):
         + location: DocumentLocation?
         + subsections: [ActivityLogSection]
         + messages: [ActivityLogMessage]
+        + attachments: [ActivityLogSectionAttachment]
     """
 
     domainType: str
@@ -975,6 +1085,7 @@ class ActivityLogSection(XcresultObject):
     location: DocumentLocation | None
     subsections: list["ActivityLogSection"]
     messages: list[ActivityLogMessage]
+    attachments: list[ActivityLogSectionAttachment]
 
 
 class ConsoleLogSection(XcresultObject):
@@ -1328,8 +1439,13 @@ class ActionTestSummary(ActionTestSummaryIdentifiableObject):
         + skipNoticeSummary: ActionTestNoticeSummary?
         + activitySummaries: [ActionTestActivitySummary]
         + repetitionPolicySummary: ActionTestRepetitionPolicySummary?
+        + arguments: [TestArgument]
         + configuration: ActionTestConfiguration?
         + warningSummaries: [ActionTestIssueSummary]
+        + summary: String?
+        + documentation: [TestDocumentation]
+        + trackedIssues: [IssueTrackingMetadata]
+        + tags: [TestTag]
     """
 
     testStatus: str
@@ -1340,8 +1456,13 @@ class ActionTestSummary(ActionTestSummaryIdentifiableObject):
     skipNoticeSummary: ActionTestNoticeSummary | None
     activitySummaries: list[ActionTestActivitySummary]
     repetitionPolicySummary: ActionTestRepetitionPolicySummary | None
+    arguments: list[TestArgument]
     configuration: ActionTestConfiguration | None
     warningSummaries: list[ActionTestIssueSummary]
+    summary: str | None
+    documentation: list[TestDocumentation]
+    trackedIssues: list[IssueTrackingMetadata]
+    tags: list[TestTag]
 
 
 class ActionTestPlanRunSummaries(XcresultObject):
