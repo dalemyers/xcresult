@@ -10,9 +10,7 @@ try:
     import xcresult
 except ImportError:
     # Insert the package into the PATH
-    sys.path.insert(
-        0, os.path.abspath(os.path.join(os.path.abspath(__file__), "..", ".."))
-    )
+    sys.path.insert(0, os.path.abspath(os.path.join(os.path.abspath(__file__), "..", "..")))
     import xcresult
 
 
@@ -26,7 +24,9 @@ def _handle_export(args: argparse.Namespace) -> int:
     try:
         bundle = xcresult.Xcresults(args.bundle_path)
         bundle.export_test_attachments(args.output_path)
+        # pylint: disable=broad-exception-caught
     except Exception as ex:
+        # pylint: enable=broad-exception-caught
         print(f"Could not export attachments: {ex}", file=sys.stderr)
         return 1
 
@@ -49,9 +49,7 @@ def _handle_arguments() -> int:
 
     subparsers = parser.add_subparsers()
 
-    export_parser = subparsers.add_parser(
-        "export", help="Export attachments from a bundle"
-    )
+    export_parser = subparsers.add_parser("export", help="Export attachments from a bundle")
 
     export_parser.add_argument(
         "-o",
@@ -68,7 +66,9 @@ def _handle_arguments() -> int:
 
     try:
         _ = args.subcommand
+    # pylint: disable=broad-exception-caught
     except Exception:
+        # pylint: enable=broad-exception-caught
         parser.print_help()
         return 1
 

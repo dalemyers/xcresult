@@ -2,7 +2,13 @@
 
 from typing import Any
 
-from xcresult.exceptions import MissingPropertyException
+# This is the 'umbrella' import for the module so we need to import everything
+# pylint: disable=unused-import
+from xcresult.exceptions import (
+    MissingPropertyException,
+    UnsupportedTypeException,
+    XcresultException,
+)
 from xcresult.model import *
 from xcresult.xcresulttool import (
     deserialize,
@@ -11,6 +17,8 @@ from xcresult.xcresulttool import (
     get,
     export_action_test_summary_group,
 )
+
+# pylint: enable=unused-import
 
 
 class Xcresults:
@@ -36,9 +44,7 @@ class Xcresults:
             assert self._actions_invocation_record is not None
         return self._actions_invocation_record
 
-    def export_attachment(
-        self, identifier: str, type_identifier: str, output_path: str
-    ) -> None:
+    def export_attachment(self, identifier: str, type_identifier: str, output_path: str) -> None:
         """Get an attachment from an xcresult bundle.
 
         :param path: The path of the xcresult bundle
@@ -64,6 +70,9 @@ class Xcresults:
             raise MissingPropertyException("No actions found")
 
         for action in self.actions_invocation_record.actions:
+            if action.actionResult.testsRef is None:
+                continue
+
             test_id = action.actionResult.testsRef.id
             summaries = deserialize(self.get(test_id))
 

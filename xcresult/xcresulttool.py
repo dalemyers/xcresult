@@ -8,7 +8,7 @@ import subprocess
 from typing import Any, cast, get_type_hints
 
 from xcresult import model
-from xcresult.exceptions import UnsupportedTypeException, MissingPropertyException
+from xcresult.exceptions import UnsupportedTypeException
 from xcresult.model import (
     ActionsInvocationRecord,
     ActionTestPlanRunSummaries,
@@ -63,9 +63,7 @@ def deserialize(data: dict[str, Any]) -> Any:
         try:
             setattr(instance, key, deserialize(value))
         except UnsupportedTypeException:
-            logging.warning(
-                f"Found unsupported property on {type_name} when deserializing: {key}"
-            )
+            logging.warning(f"Found unsupported property on {type_name} when deserializing: {key}")
             continue
 
     for property_name, property_type in get_type_hints(xc_class).items():
@@ -172,9 +170,7 @@ def get_actions_invocation_record(path) -> ActionsInvocationRecord:
     return cast(ActionsInvocationRecord, deserialize(object_data))
 
 
-def get_test_plan_run_summaries(
-    path: str, identifier: str
-) -> ActionTestPlanRunSummaries:
+def get_test_plan_run_summaries(path: str, identifier: str) -> ActionTestPlanRunSummaries:
     """Get an ActionTestPlanRunSummaries.
 
     :param path: The path to the xcresult bundle
@@ -198,9 +194,7 @@ def get_action_test_summary(path: str, identifier: str) -> ActionTestSummary:
     return cast(ActionTestSummary, deserialize(object_data))
 
 
-def export_attachment(
-    path: str, identifier: str, type_identifier: str, output_path
-) -> None:
+def export_attachment(path: str, identifier: str, type_identifier: str, output_path) -> None:
     """Get an attachment from an xcresult bundle.
 
     The name will be the attachment name generated if available.
@@ -215,6 +209,7 @@ def export_attachment(
     _export(path, identifier, type_identifier, output_path)
 
 
+# pylint: disable=too-many-branches
 def export_action_test_summary_group(
     results_path: str,
     test: model.ActionTestSummaryIdentifiableObject,
@@ -235,6 +230,12 @@ def export_action_test_summary_group(
             export_action_test_summary_group(results_path, subtest, output_path)
         return
 
+    if not isinstance(test, model.ActionTestMetadata):
+        return
+
+    if test.summaryRef is None:
+        return
+
     identifier = test.summaryRef.id
     data = deserialize(get(results_path, identifier))
 
@@ -252,9 +253,7 @@ def export_action_test_summary_group(
                     results_path,
                     identifier,
                     "file",
-                    os.path.join(
-                        output_path, "summary", relative_path, attachment.filename
-                    ),
+                    os.path.join(output_path, "summary", relative_path, attachment.filename),
                 )
 
     if data.failureSummaries:
@@ -270,7 +269,8 @@ def export_action_test_summary_group(
                     results_path,
                     identifier,
                     "file",
-                    os.path.join(
-                        output_path, "failure", relative_path, attachment.filename
-                    ),
+                    os.path.join(output_path, "failure", relative_path, attachment.filename),
                 )
+
+
+# pylint: enable=too-many-branches
