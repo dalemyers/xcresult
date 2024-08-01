@@ -14,49 +14,52 @@ class XcresultObject:
     """Generated from xcresulttool format description."""
 
 
-# Defined Type: Bool
+# Defined Type: Bool -> bool
 
 
-# Defined Type: Data
+# Defined Type: Data -> bytes
 
 
-# Defined Type: Date
+# Defined Type: Date -> datetime.datetime
 
 
-# Defined Type: Double
+# Defined Type: Double -> float
 
 
-# Defined Type: Int
+# Defined Type: Int -> int
 
 
-# Defined Type: Int16
+# Defined Type: Int16 -> int
 
 
-# Defined Type: Int32
+# Defined Type: Int32 -> int
 
 
-# Defined Type: Int64
+# Defined Type: Int64 -> int
 
 
-# Defined Type: Int8
+# Defined Type: Int8 -> int
 
 
-# Defined Type: String
+# Defined Type: String -> str
 
 
-# Defined Type: UInt16
+# Defined Type: UInt16 -> int
 
 
-# Defined Type: UInt32
+# Defined Type: UInt32 -> int
 
 
-# Defined Type: UInt64
+# Defined Type: UInt64 -> int
 
 
-# Defined Type: UInt8
+# Defined Type: UInt8 -> int
 
 
-# Defined Type: Array
+# Defined Type: URL -> str
+
+
+# Defined Type: Array -> Array
 
 
 class ActionPlatformRecord(XcresultObject):
@@ -255,18 +258,6 @@ class EntityIdentifier(XcresultObject):
     containerName: str
     entityType: str
     sharedState: str
-
-
-class IssueTrackingMetadata(XcresultObject):
-    """Generated from xcresulttool format description.
-
-    - IssueTrackingMetadata
-      * Kind: object
-      * Properties:
-        + summary: String
-    """
-
-    summary: str
 
 
 class ObjectID(XcresultObject):
@@ -599,6 +590,24 @@ class IssueSummary(XcresultObject):
         return f"* [ERROR] {self.message}\n  Found in {relative_path}:{self.documentLocationInCreatingWorkspace.starting_line_number}:{self.documentLocationInCreatingWorkspace.starting_column_number}"
 
 
+class IssueTrackingMetadata(XcresultObject):
+    """Generated from xcresulttool format description.
+
+    - IssueTrackingMetadata
+      * Kind: object
+      * Properties:
+        + identifier: String
+        + url: URL?
+        + comment: String?
+        + summary: String
+    """
+
+    identifier: str
+    url: str | None
+    comment: str | None
+    summary: str
+
+
 class Reference(XcresultObject):
     """Generated from xcresulttool format description.
 
@@ -672,11 +681,13 @@ class TestParameter(XcresultObject):
         + label: String
         + name: String?
         + typeName: String?
+        + fullyQualifiedTypeName: String?
     """
 
     label: str
     name: str | None
     typeName: str | None
+    fullyQualifiedTypeName: str | None
 
 
 class TestTag(XcresultObject):
@@ -693,6 +704,30 @@ class TestTag(XcresultObject):
     identifier: str
     name: str
     anchors: list[str]
+
+
+class TestValue(XcresultObject):
+    """Generated from xcresulttool format description.
+
+    - TestValue
+      * Kind: object
+      * Properties:
+        + description: String
+        + debugDescription: String?
+        + typeName: String?
+        + fullyQualifiedTypeName: String?
+        + label: String?
+        + isCollection: Bool
+        + children: TestValue?
+    """
+
+    description: str
+    debugDescription: str | None
+    typeName: str | None
+    fullyQualifiedTypeName: str | None
+    label: str | None
+    isCollection: bool
+    children: Optional["TestValue"]
 
 
 class ActionRunDestinationRecord(XcresultObject):
@@ -876,6 +911,7 @@ class TestArgument(XcresultObject):
         + description: String
         + debugDescription: String?
         + typeName: String?
+        + value: TestValue
     """
 
     parameter: TestParameter | None
@@ -883,6 +919,7 @@ class TestArgument(XcresultObject):
     description: str
     debugDescription: str | None
     typeName: str | None
+    value: TestValue
 
 
 class TestAssociatedError(XcresultObject):
@@ -899,6 +936,22 @@ class TestAssociatedError(XcresultObject):
     domain: str | None
     code: int | None
     userInfo: SortedKeyValueArray | None
+
+
+class TestExpression(XcresultObject):
+    """Generated from xcresulttool format description.
+
+    - TestExpression
+      * Kind: object
+      * Properties:
+        + sourceCode: String
+        + value: TestValue?
+        + subexpressions: [TestExpression]
+    """
+
+    sourceCode: str
+    value: TestValue | None
+    subexpressions: list["TestExpression"]
 
 
 class TestFailureIssueSummary(IssueSummary):
@@ -1285,6 +1338,7 @@ class ActionTestFailureSummary(XcresultObject):
         + sourceCodeContext: SourceCodeContext?
         + timestamp: Date?
         + isTopLevelFailure: Bool
+        + expression: TestExpression?
     """
 
     message: str | None
@@ -1299,6 +1353,7 @@ class ActionTestFailureSummary(XcresultObject):
     sourceCodeContext: SourceCodeContext | None
     timestamp: datetime.datetime | None
     isTopLevelFailure: bool
+    expression: TestExpression | None
 
 
 class ActionTestIssueSummary(XcresultObject):

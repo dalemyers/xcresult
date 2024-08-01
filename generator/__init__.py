@@ -149,7 +149,7 @@ class Definition:
         output = []
 
         if self.kind != "object":
-            output.append(f"# Defined Type: {self.name}")
+            output.append(f"# Defined Type: {self.name} -> {XcresultType(self.name).python_type("")}")
             return output
 
         class_line = f"class {self.name}"
