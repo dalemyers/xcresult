@@ -357,9 +357,13 @@ def generate(output_path: str):
             "_RESOLVED_MODELS = [getattr(_CURRENT_MODULE, m) for m in _MODEL_NAMES]\n"
         )
         output_file.write("# pylint: disable=unidiomatic-typecheck\n")
+        output_file.write("_RESOLVED_MODELS = [\n")
+        output_file.write("    m\n")
+        output_file.write("    for m in _RESOLVED_MODELS\n")
         output_file.write(
-            "_RESOLVED_MODELS = [m for m in _RESOLVED_MODELS if type(m) == type(type) and issubclass(m, XcresultObject)]\n"
+            "    if type(m) == type(type) and issubclass(m, XcresultObject)\n"
         )
+        output_file.write("]\n")
         output_file.write("# pylint: enable=unidiomatic-typecheck\n")
         output_file.write("MODELS = {m.__name__: m for m in _RESOLVED_MODELS}\n")
 

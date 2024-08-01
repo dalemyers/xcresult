@@ -1362,7 +1362,9 @@ _MODEL_NAMES = [m for m in _MODEL_NAMES if not m.startswith("__")]
 _RESOLVED_MODELS = [getattr(_CURRENT_MODULE, m) for m in _MODEL_NAMES]
 # pylint: disable=unidiomatic-typecheck
 _RESOLVED_MODELS = [
-    m for m in _RESOLVED_MODELS if type(m) == type(type) and issubclass(m, XcresultObject)
+    m
+    for m in _RESOLVED_MODELS
+    if type(m) == type(type) and issubclass(m, XcresultObject)
 ]
 # pylint: enable=unidiomatic-typecheck
 MODELS = {m.__name__: m for m in _RESOLVED_MODELS}
