@@ -108,10 +108,3 @@ class Xcresults:
                         export_action_test_summary_group(
                             self.path, test, output_path, 5
                         )
-
-
-x = Xcresults(
-    "/Users/dalemyers/Microsoft/OneDrive.iOS/iOS/product/build/OneDriveUnitTests_test_result.xcresult"
-)
-x.export_test_attachments("/Users/dalemyers/Downloads/attachments")
-print(x.actions_invocation_record)
