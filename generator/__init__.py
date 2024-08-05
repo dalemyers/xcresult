@@ -141,22 +141,27 @@ class Definition:
             )
         )
 
-    def python(self) -> list[str]:
-        """Convert this definition to Python code.
-
-        :returns: The Python code
-        """
+    def _generate_definition_header(self) -> tuple[list[str], bool]:
+        """Convert this definition to Python code."""
         output = []
 
         if self.kind != "object":
-            output.append(f"# Defined Type: {self.name} -> {XcresultType(self.name).python_type("")}")
-            return output
+            output.append(
+                f'# Defined Type: {self.name} -> {XcresultType(self.name).python_type("")}'
+            )
+            return output, False
 
         class_line = f"class {self.name}"
         if self.supertype is not None and self.name != "XcresultObject":
             class_line += f"({self.supertype})"
         class_line += ":"
         output.append(class_line)
+
+        return output, True
+
+    def _generate_doc_comment(self) -> list[str]:
+        """Generate the doc comment for this definition."""
+        output = []
 
         if self.original:
             output.append('    """Generated from xcresulttool format description.')
@@ -173,22 +178,45 @@ class Definition:
             python_type = xctype.python_type(self.name)
             output.append(f"    {name}: {python_type}")
 
+        return output
+
+    def _add_additional_methods(self) -> list[str]:
+        output = []
+
         additional_methods_path = os.path.join(
             os.path.dirname(os.path.abspath(__file__)),
             "additional_methods",
             f"{self.name}.py",
         )
-        if os.path.exists(additional_methods_path):
-            output.append("")
-            with open(
-                additional_methods_path, encoding="utf-8"
-            ) as additional_methods_file:
-                for line in additional_methods_file.readlines():
-                    stripped = line.rstrip()
-                    if len(stripped) > 0:
-                        output.append("    " + line.rstrip())
-                    else:
-                        output.append("")
+        if not os.path.exists(additional_methods_path):
+            return output
+
+        output.append("")
+        with open(additional_methods_path, encoding="utf-8") as additional_methods_file:
+            for line in additional_methods_file.readlines():
+                stripped = line.rstrip()
+                if len(stripped) > 0:
+                    output.append("    " + line.rstrip())
+                else:
+                    output.append("")
+
+        return output
+
+    def python(self) -> list[str]:
+        """Convert this definition to Python code.
+
+        :returns: The Python code
+        """
+        output = []
+
+        next_output, should_continue = self._generate_definition_header()
+        output.extend(next_output)
+
+        if not should_continue:
+            return output
+
+        output.extend(self._generate_doc_comment())
+        output.extend(self._add_additional_methods())
 
         return output
 
