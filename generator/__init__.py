@@ -202,6 +202,31 @@ class Definition:
 
         return output
 
+    def _add_dunder_methods(self) -> list[str]:
+        output = [""]
+
+        output.append("    def __members(self) -> tuple:")
+        output.append("        return (")
+        for name, _ in self.properties:
+            output.append(f"            self.{name},")
+        output.append("        )")
+        output.append("")
+
+        output.append("    def __eq__(self, other: Any) -> bool:")
+        output.append("        if not isinstance(other, self.__class__):")
+        output.append("            return False")
+        output.append("")
+        output.append("        # pylint: disable=protected-access")
+        output.append("        return self.__members() == other.__members()")
+        output.append("        # pylint: enable=protected-access")
+        output.append("")
+
+        output.append("    def __hash__(self) -> int:")
+        output.append("        return hash(self.__members())")
+        output.append("")
+
+        return output
+
     def python(self) -> list[str]:
         """Convert this definition to Python code.
 
@@ -217,6 +242,7 @@ class Definition:
 
         output.extend(self._generate_doc_comment())
         output.extend(self._add_additional_methods())
+        output.extend(self._add_dunder_methods())
 
         return output
 
