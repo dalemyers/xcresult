@@ -377,7 +377,7 @@ def generate(output_path: str):
     :param output_path: The path to write the models to
     """
     output = subprocess.run(
-        ["xcrun", "xcresulttool", "formatDescription"],
+        ["xcrun", "xcresulttool", "formatDescription", "--legacy"],
         check=True,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,

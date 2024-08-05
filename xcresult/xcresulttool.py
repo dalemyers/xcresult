@@ -113,7 +113,16 @@ def get(path: str, identifier: str | None = None) -> dict[str, Any]:
     :returns: The deserialized data
     """
 
-    command = ["xcrun", "xcresulttool", "get", "--path", path, "--format", "json"]
+    command = [
+        "xcrun",
+        "xcresulttool",
+        "get",
+        "--path",
+        path,
+        "--format",
+        "json",
+        "--legacy",
+    ]
 
     if identifier:
         command += ["--id", identifier]
