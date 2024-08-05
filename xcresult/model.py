@@ -10,22 +10,50 @@ import urllib.parse
 # pylint: disable=invalid-name
 
 
+def xchash(item: Any) -> int:
+    all_hashes = []
+
+    if isinstance(item, list):
+        for sub_item in item:
+            all_hashes.append(xchash(sub_item))
+        return hash(tuple(all_hashes))
+
+    if isinstance(item, dict):
+        for key, value in item.items():
+            all_hashes.append(xchash(key))
+            all_hashes.append(xchash(value))
+        return hash(tuple(all_hashes))
+
+    if not hasattr(item, "_members"):
+        return hash(item)
+
+    members_call = getattr(item, "_members", None)
+    if members_call is None:
+        return hash(item)
+
+    for member in members_call():
+        all_hashes.append(xchash(member))
+
+    return hash(tuple(all_hashes))
+
+
 class XcresultObject:
     """Generated from xcresulttool format description."""
 
-    def __members(self) -> tuple:
-        return ()
+    def _members(self) -> tuple:
+        properties = []
+        return tuple(properties)
 
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, self.__class__):
             return False
 
         # pylint: disable=protected-access
-        return self.__members() == other.__members()
+        return self._members() == other._members()
         # pylint: enable=protected-access
 
     def __hash__(self) -> int:
-        return hash(self.__members())
+        return xchash(self)
 
 
 # Defined Type: Bool -> bool
@@ -89,22 +117,23 @@ class ActionPlatformRecord(XcresultObject):
     identifier: str
     userDescription: str
 
-    def __members(self) -> tuple:
-        return (
+    def _members(self) -> tuple:
+        properties = [
             self.identifier,
             self.userDescription,
-        )
+        ]
+        return tuple(properties + list(super()._members()))
 
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, self.__class__):
             return False
 
         # pylint: disable=protected-access
-        return self.__members() == other.__members()
+        return self._members() == other._members()
         # pylint: enable=protected-access
 
     def __hash__(self) -> int:
-        return hash(self.__members())
+        return xchash(self)
 
 
 class ActionSDKRecord(XcresultObject):
@@ -124,24 +153,25 @@ class ActionSDKRecord(XcresultObject):
     operatingSystemVersion: str
     isInternal: bool
 
-    def __members(self) -> tuple:
-        return (
+    def _members(self) -> tuple:
+        properties = [
             self.name,
             self.identifier,
             self.operatingSystemVersion,
             self.isInternal,
-        )
+        ]
+        return tuple(properties + list(super()._members()))
 
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, self.__class__):
             return False
 
         # pylint: disable=protected-access
-        return self.__members() == other.__members()
+        return self._members() == other._members()
         # pylint: enable=protected-access
 
     def __hash__(self) -> int:
-        return hash(self.__members())
+        return xchash(self)
 
 
 class ActivityLogAnalyzerStep(XcresultObject):
@@ -155,19 +185,22 @@ class ActivityLogAnalyzerStep(XcresultObject):
 
     parentIndex: int
 
-    def __members(self) -> tuple:
-        return (self.parentIndex,)
+    def _members(self) -> tuple:
+        properties = [
+            self.parentIndex,
+        ]
+        return tuple(properties + list(super()._members()))
 
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, self.__class__):
             return False
 
         # pylint: disable=protected-access
-        return self.__members() == other.__members()
+        return self._members() == other._members()
         # pylint: enable=protected-access
 
     def __hash__(self) -> int:
-        return hash(self.__members())
+        return xchash(self)
 
 
 class ActivityLogSectionAttachment(XcresultObject):
@@ -187,24 +220,25 @@ class ActivityLogSectionAttachment(XcresultObject):
     minorVersion: int
     data: bytes
 
-    def __members(self) -> tuple:
-        return (
+    def _members(self) -> tuple:
+        properties = [
             self.identifier,
             self.majorVersion,
             self.minorVersion,
             self.data,
-        )
+        ]
+        return tuple(properties + list(super()._members()))
 
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, self.__class__):
             return False
 
         # pylint: disable=protected-access
-        return self.__members() == other.__members()
+        return self._members() == other._members()
         # pylint: enable=protected-access
 
     def __hash__(self) -> int:
-        return hash(self.__members())
+        return xchash(self)
 
 
 class DocumentLocation(XcresultObject):
@@ -324,22 +358,23 @@ class DocumentLocation(XcresultObject):
         """
         return self._get_property("StartingLineNumber", offset=1)
 
-    def __members(self) -> tuple:
-        return (
+    def _members(self) -> tuple:
+        properties = [
             self.url,
             self.concreteTypeName,
-        )
+        ]
+        return tuple(properties + list(super()._members()))
 
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, self.__class__):
             return False
 
         # pylint: disable=protected-access
-        return self.__members() == other.__members()
+        return self._members() == other._members()
         # pylint: enable=protected-access
 
     def __hash__(self) -> int:
-        return hash(self.__members())
+        return xchash(self)
 
 
 class EntityIdentifier(XcresultObject):
@@ -359,24 +394,25 @@ class EntityIdentifier(XcresultObject):
     entityType: str
     sharedState: str
 
-    def __members(self) -> tuple:
-        return (
+    def _members(self) -> tuple:
+        properties = [
             self.entityName,
             self.containerName,
             self.entityType,
             self.sharedState,
-        )
+        ]
+        return tuple(properties + list(super()._members()))
 
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, self.__class__):
             return False
 
         # pylint: disable=protected-access
-        return self.__members() == other.__members()
+        return self._members() == other._members()
         # pylint: enable=protected-access
 
     def __hash__(self) -> int:
-        return hash(self.__members())
+        return xchash(self)
 
 
 class ObjectID(XcresultObject):
@@ -390,19 +426,22 @@ class ObjectID(XcresultObject):
 
     hash: str
 
-    def __members(self) -> tuple:
-        return (self.hash,)
+    def _members(self) -> tuple:
+        properties = [
+            self.hash,
+        ]
+        return tuple(properties + list(super()._members()))
 
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, self.__class__):
             return False
 
         # pylint: disable=protected-access
-        return self.__members() == other.__members()
+        return self._members() == other._members()
         # pylint: enable=protected-access
 
     def __hash__(self) -> int:
-        return hash(self.__members())
+        return xchash(self)
 
 
 class SortedKeyValueArrayPair(XcresultObject):
@@ -418,22 +457,23 @@ class SortedKeyValueArrayPair(XcresultObject):
     key: str
     value: Any
 
-    def __members(self) -> tuple:
-        return (
+    def _members(self) -> tuple:
+        properties = [
             self.key,
             self.value,
-        )
+        ]
+        return tuple(properties + list(super()._members()))
 
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, self.__class__):
             return False
 
         # pylint: disable=protected-access
-        return self.__members() == other.__members()
+        return self._members() == other._members()
         # pylint: enable=protected-access
 
     def __hash__(self) -> int:
-        return hash(self.__members())
+        return xchash(self)
 
 
 class TestDocumentation(XcresultObject):
@@ -449,22 +489,23 @@ class TestDocumentation(XcresultObject):
     content: str
     format: str
 
-    def __members(self) -> tuple:
-        return (
+    def _members(self) -> tuple:
+        properties = [
             self.content,
             self.format,
-        )
+        ]
+        return tuple(properties + list(super()._members()))
 
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, self.__class__):
             return False
 
         # pylint: disable=protected-access
-        return self.__members() == other.__members()
+        return self._members() == other._members()
         # pylint: enable=protected-access
 
     def __hash__(self) -> int:
-        return hash(self.__members())
+        return xchash(self)
 
 
 class TypeDefinition(XcresultObject):
@@ -480,22 +521,23 @@ class TypeDefinition(XcresultObject):
     name: str
     supertype: Optional["TypeDefinition"]
 
-    def __members(self) -> tuple:
-        return (
+    def _members(self) -> tuple:
+        properties = [
             self.name,
             self.supertype,
-        )
+        ]
+        return tuple(properties + list(super()._members()))
 
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, self.__class__):
             return False
 
         # pylint: disable=protected-access
-        return self.__members() == other.__members()
+        return self._members() == other._members()
         # pylint: enable=protected-access
 
     def __hash__(self) -> int:
-        return hash(self.__members())
+        return xchash(self)
 
 
 class ActionAbstractTestSummary(XcresultObject):
@@ -509,19 +551,22 @@ class ActionAbstractTestSummary(XcresultObject):
 
     name: str | None
 
-    def __members(self) -> tuple:
-        return (self.name,)
+    def _members(self) -> tuple:
+        properties = [
+            self.name,
+        ]
+        return tuple(properties + list(super()._members()))
 
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, self.__class__):
             return False
 
         # pylint: disable=protected-access
-        return self.__members() == other.__members()
+        return self._members() == other._members()
         # pylint: enable=protected-access
 
     def __hash__(self) -> int:
-        return hash(self.__members())
+        return xchash(self)
 
 
 class ActionDeviceRecord(XcresultObject):
@@ -569,8 +614,8 @@ class ActionDeviceRecord(XcresultObject):
     logicalCPUCoresPerPackage: int | None
     platformRecord: ActionPlatformRecord
 
-    def __members(self) -> tuple:
-        return (
+    def _members(self) -> tuple:
+        properties = [
             self.name,
             self.isConcreteDevice,
             self.operatingSystemVersion,
@@ -589,18 +634,19 @@ class ActionDeviceRecord(XcresultObject):
             self.physicalCPUCoresPerPackage,
             self.logicalCPUCoresPerPackage,
             self.platformRecord,
-        )
+        ]
+        return tuple(properties + list(super()._members()))
 
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, self.__class__):
             return False
 
         # pylint: disable=protected-access
-        return self.__members() == other.__members()
+        return self._members() == other._members()
         # pylint: enable=protected-access
 
     def __hash__(self) -> int:
-        return hash(self.__members())
+        return xchash(self)
 
 
 class ActionTestNoticeSummary(XcresultObject):
@@ -620,24 +666,25 @@ class ActionTestNoticeSummary(XcresultObject):
     lineNumber: int
     timestamp: datetime.datetime | None
 
-    def __members(self) -> tuple:
-        return (
+    def _members(self) -> tuple:
+        properties = [
             self.message,
             self.fileName,
             self.lineNumber,
             self.timestamp,
-        )
+        ]
+        return tuple(properties + list(super()._members()))
 
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, self.__class__):
             return False
 
         # pylint: disable=protected-access
-        return self.__members() == other.__members()
+        return self._members() == other._members()
         # pylint: enable=protected-access
 
     def __hash__(self) -> int:
-        return hash(self.__members())
+        return xchash(self)
 
 
 class ActionTestPerformanceMetricSummary(XcresultObject):
@@ -671,8 +718,8 @@ class ActionTestPerformanceMetricSummary(XcresultObject):
     maxStandardDeviation: float | None
     polarity: str | None
 
-    def __members(self) -> tuple:
-        return (
+    def _members(self) -> tuple:
+        properties = [
             self.displayName,
             self.unitOfMeasurement,
             self.measurements,
@@ -684,18 +731,19 @@ class ActionTestPerformanceMetricSummary(XcresultObject):
             self.maxRegression,
             self.maxStandardDeviation,
             self.polarity,
-        )
+        ]
+        return tuple(properties + list(super()._members()))
 
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, self.__class__):
             return False
 
         # pylint: disable=protected-access
-        return self.__members() == other.__members()
+        return self._members() == other._members()
         # pylint: enable=protected-access
 
     def __hash__(self) -> int:
-        return hash(self.__members())
+        return xchash(self)
 
 
 class ActionTestRepetitionPolicySummary(XcresultObject):
@@ -713,23 +761,24 @@ class ActionTestRepetitionPolicySummary(XcresultObject):
     totalIterations: int | None
     repetitionMode: str | None
 
-    def __members(self) -> tuple:
-        return (
+    def _members(self) -> tuple:
+        properties = [
             self.iteration,
             self.totalIterations,
             self.repetitionMode,
-        )
+        ]
+        return tuple(properties + list(super()._members()))
 
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, self.__class__):
             return False
 
         # pylint: disable=protected-access
-        return self.__members() == other.__members()
+        return self._members() == other._members()
         # pylint: enable=protected-access
 
     def __hash__(self) -> int:
-        return hash(self.__members())
+        return xchash(self)
 
 
 class ActionsInvocationMetadata(XcresultObject):
@@ -747,23 +796,24 @@ class ActionsInvocationMetadata(XcresultObject):
     uniqueIdentifier: str
     schemeIdentifier: EntityIdentifier | None
 
-    def __members(self) -> tuple:
-        return (
+    def _members(self) -> tuple:
+        properties = [
             self.creatingWorkspaceFilePath,
             self.uniqueIdentifier,
             self.schemeIdentifier,
-        )
+        ]
+        return tuple(properties + list(super()._members()))
 
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, self.__class__):
             return False
 
         # pylint: disable=protected-access
-        return self.__members() == other.__members()
+        return self._members() == other._members()
         # pylint: enable=protected-access
 
     def __hash__(self) -> int:
-        return hash(self.__members())
+        return xchash(self)
 
 
 class ActivityLogAnalyzerControlFlowStepEdge(XcresultObject):
@@ -779,22 +829,23 @@ class ActivityLogAnalyzerControlFlowStepEdge(XcresultObject):
     startLocation: DocumentLocation | None
     endLocation: DocumentLocation | None
 
-    def __members(self) -> tuple:
-        return (
+    def _members(self) -> tuple:
+        properties = [
             self.startLocation,
             self.endLocation,
-        )
+        ]
+        return tuple(properties + list(super()._members()))
 
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, self.__class__):
             return False
 
         # pylint: disable=protected-access
-        return self.__members() == other.__members()
+        return self._members() == other._members()
         # pylint: enable=protected-access
 
     def __hash__(self) -> int:
-        return hash(self.__members())
+        return xchash(self)
 
 
 class ActivityLogAnalyzerEventStep(ActivityLogAnalyzerStep):
@@ -815,24 +866,25 @@ class ActivityLogAnalyzerEventStep(ActivityLogAnalyzerStep):
     description: str
     callDepth: int
 
-    def __members(self) -> tuple:
-        return (
+    def _members(self) -> tuple:
+        properties = [
             self.title,
             self.location,
             self.description,
             self.callDepth,
-        )
+        ]
+        return tuple(properties + list(super()._members()))
 
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, self.__class__):
             return False
 
         # pylint: disable=protected-access
-        return self.__members() == other.__members()
+        return self._members() == other._members()
         # pylint: enable=protected-access
 
     def __hash__(self) -> int:
-        return hash(self.__members())
+        return xchash(self)
 
 
 class ActivityLogMessageAnnotation(XcresultObject):
@@ -848,22 +900,23 @@ class ActivityLogMessageAnnotation(XcresultObject):
     title: str
     location: DocumentLocation | None
 
-    def __members(self) -> tuple:
-        return (
+    def _members(self) -> tuple:
+        properties = [
             self.title,
             self.location,
-        )
+        ]
+        return tuple(properties + list(super()._members()))
 
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, self.__class__):
             return False
 
         # pylint: disable=protected-access
-        return self.__members() == other.__members()
+        return self._members() == other._members()
         # pylint: enable=protected-access
 
     def __hash__(self) -> int:
-        return hash(self.__members())
+        return xchash(self)
 
 
 class ArchiveInfo(XcresultObject):
@@ -877,19 +930,22 @@ class ArchiveInfo(XcresultObject):
 
     path: str | None
 
-    def __members(self) -> tuple:
-        return (self.path,)
+    def _members(self) -> tuple:
+        properties = [
+            self.path,
+        ]
+        return tuple(properties + list(super()._members()))
 
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, self.__class__):
             return False
 
         # pylint: disable=protected-access
-        return self.__members() == other.__members()
+        return self._members() == other._members()
         # pylint: enable=protected-access
 
     def __hash__(self) -> int:
-        return hash(self.__members())
+        return xchash(self)
 
 
 class ConsoleLogItemLogData(XcresultObject):
@@ -933,8 +989,8 @@ class ConsoleLogItemLogData(XcresultObject):
     unixTimeInterval: float
     timeZone: str | None
 
-    def __members(self) -> tuple:
-        return (
+    def _members(self) -> tuple:
+        properties = [
             self.message,
             self.subsystem,
             self.category,
@@ -951,18 +1007,19 @@ class ConsoleLogItemLogData(XcresultObject):
             self.senderImageOffset,
             self.unixTimeInterval,
             self.timeZone,
-        )
+        ]
+        return tuple(properties + list(super()._members()))
 
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, self.__class__):
             return False
 
         # pylint: disable=protected-access
-        return self.__members() == other.__members()
+        return self._members() == other._members()
         # pylint: enable=protected-access
 
     def __hash__(self) -> int:
-        return hash(self.__members())
+        return xchash(self)
 
 
 class IssueSummary(XcresultObject):
@@ -999,24 +1056,25 @@ class IssueSummary(XcresultObject):
 
         return f"* [ERROR] {self.message}\n  Found in {relative_path}:{self.documentLocationInCreatingWorkspace.starting_line_number}:{self.documentLocationInCreatingWorkspace.starting_column_number}"
 
-    def __members(self) -> tuple:
-        return (
+    def _members(self) -> tuple:
+        properties = [
             self.issueType,
             self.message,
             self.producingTarget,
             self.documentLocationInCreatingWorkspace,
-        )
+        ]
+        return tuple(properties + list(super()._members()))
 
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, self.__class__):
             return False
 
         # pylint: disable=protected-access
-        return self.__members() == other.__members()
+        return self._members() == other._members()
         # pylint: enable=protected-access
 
     def __hash__(self) -> int:
-        return hash(self.__members())
+        return xchash(self)
 
 
 class IssueTrackingMetadata(XcresultObject):
@@ -1036,24 +1094,25 @@ class IssueTrackingMetadata(XcresultObject):
     comment: str | None
     summary: str
 
-    def __members(self) -> tuple:
-        return (
+    def _members(self) -> tuple:
+        properties = [
             self.identifier,
             self.url,
             self.comment,
             self.summary,
-        )
+        ]
+        return tuple(properties + list(super()._members()))
 
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, self.__class__):
             return False
 
         # pylint: disable=protected-access
-        return self.__members() == other.__members()
+        return self._members() == other._members()
         # pylint: enable=protected-access
 
     def __hash__(self) -> int:
-        return hash(self.__members())
+        return xchash(self)
 
 
 class Reference(XcresultObject):
@@ -1069,22 +1128,23 @@ class Reference(XcresultObject):
     id: str
     targetType: TypeDefinition | None
 
-    def __members(self) -> tuple:
-        return (
+    def _members(self) -> tuple:
+        properties = [
             self.id,
             self.targetType,
-        )
+        ]
+        return tuple(properties + list(super()._members()))
 
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, self.__class__):
             return False
 
         # pylint: disable=protected-access
-        return self.__members() == other.__members()
+        return self._members() == other._members()
         # pylint: enable=protected-access
 
     def __hash__(self) -> int:
-        return hash(self.__members())
+        return xchash(self)
 
 
 class ResultMetrics(XcresultObject):
@@ -1110,8 +1170,8 @@ class ResultMetrics(XcresultObject):
     warningCount: int
     totalCoveragePercentage: float | None
 
-    def __members(self) -> tuple:
-        return (
+    def _members(self) -> tuple:
+        properties = [
             self.analyzerWarningCount,
             self.errorCount,
             self.testsCount,
@@ -1119,18 +1179,19 @@ class ResultMetrics(XcresultObject):
             self.testsSkippedCount,
             self.warningCount,
             self.totalCoveragePercentage,
-        )
+        ]
+        return tuple(properties + list(super()._members()))
 
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, self.__class__):
             return False
 
         # pylint: disable=protected-access
-        return self.__members() == other.__members()
+        return self._members() == other._members()
         # pylint: enable=protected-access
 
     def __hash__(self) -> int:
-        return hash(self.__members())
+        return xchash(self)
 
 
 class SortedKeyValueArray(XcresultObject):
@@ -1144,19 +1205,22 @@ class SortedKeyValueArray(XcresultObject):
 
     storage: list[SortedKeyValueArrayPair]
 
-    def __members(self) -> tuple:
-        return (self.storage,)
+    def _members(self) -> tuple:
+        properties = [
+            self.storage,
+        ]
+        return tuple(properties + list(super()._members()))
 
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, self.__class__):
             return False
 
         # pylint: disable=protected-access
-        return self.__members() == other.__members()
+        return self._members() == other._members()
         # pylint: enable=protected-access
 
     def __hash__(self) -> int:
-        return hash(self.__members())
+        return xchash(self)
 
 
 class SourceCodeLocation(XcresultObject):
@@ -1172,22 +1236,23 @@ class SourceCodeLocation(XcresultObject):
     filePath: str | None
     lineNumber: int | None
 
-    def __members(self) -> tuple:
-        return (
+    def _members(self) -> tuple:
+        properties = [
             self.filePath,
             self.lineNumber,
-        )
+        ]
+        return tuple(properties + list(super()._members()))
 
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, self.__class__):
             return False
 
         # pylint: disable=protected-access
-        return self.__members() == other.__members()
+        return self._members() == other._members()
         # pylint: enable=protected-access
 
     def __hash__(self) -> int:
-        return hash(self.__members())
+        return xchash(self)
 
 
 class TestParameter(XcresultObject):
@@ -1207,24 +1272,25 @@ class TestParameter(XcresultObject):
     typeName: str | None
     fullyQualifiedTypeName: str | None
 
-    def __members(self) -> tuple:
-        return (
+    def _members(self) -> tuple:
+        properties = [
             self.label,
             self.name,
             self.typeName,
             self.fullyQualifiedTypeName,
-        )
+        ]
+        return tuple(properties + list(super()._members()))
 
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, self.__class__):
             return False
 
         # pylint: disable=protected-access
-        return self.__members() == other.__members()
+        return self._members() == other._members()
         # pylint: enable=protected-access
 
     def __hash__(self) -> int:
-        return hash(self.__members())
+        return xchash(self)
 
 
 class TestTag(XcresultObject):
@@ -1242,23 +1308,24 @@ class TestTag(XcresultObject):
     name: str
     anchors: list[str]
 
-    def __members(self) -> tuple:
-        return (
+    def _members(self) -> tuple:
+        properties = [
             self.identifier,
             self.name,
             self.anchors,
-        )
+        ]
+        return tuple(properties + list(super()._members()))
 
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, self.__class__):
             return False
 
         # pylint: disable=protected-access
-        return self.__members() == other.__members()
+        return self._members() == other._members()
         # pylint: enable=protected-access
 
     def __hash__(self) -> int:
-        return hash(self.__members())
+        return xchash(self)
 
 
 class TestValue(XcresultObject):
@@ -1284,8 +1351,8 @@ class TestValue(XcresultObject):
     isCollection: bool
     children: Optional["TestValue"]
 
-    def __members(self) -> tuple:
-        return (
+    def _members(self) -> tuple:
+        properties = [
             self.description,
             self.debugDescription,
             self.typeName,
@@ -1293,18 +1360,19 @@ class TestValue(XcresultObject):
             self.label,
             self.isCollection,
             self.children,
-        )
+        ]
+        return tuple(properties + list(super()._members()))
 
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, self.__class__):
             return False
 
         # pylint: disable=protected-access
-        return self.__members() == other.__members()
+        return self._members() == other._members()
         # pylint: enable=protected-access
 
     def __hash__(self) -> int:
-        return hash(self.__members())
+        return xchash(self)
 
 
 class ActionRunDestinationRecord(XcresultObject):
@@ -1326,25 +1394,26 @@ class ActionRunDestinationRecord(XcresultObject):
     localComputerRecord: ActionDeviceRecord
     targetSDKRecord: ActionSDKRecord
 
-    def __members(self) -> tuple:
-        return (
+    def _members(self) -> tuple:
+        properties = [
             self.displayName,
             self.targetArchitecture,
             self.targetDeviceRecord,
             self.localComputerRecord,
             self.targetSDKRecord,
-        )
+        ]
+        return tuple(properties + list(super()._members()))
 
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, self.__class__):
             return False
 
         # pylint: disable=protected-access
-        return self.__members() == other.__members()
+        return self._members() == other._members()
         # pylint: enable=protected-access
 
     def __hash__(self) -> int:
-        return hash(self.__members())
+        return xchash(self)
 
 
 class ActionTestAttachment(XcresultObject):
@@ -1376,8 +1445,8 @@ class ActionTestAttachment(XcresultObject):
     payloadRef: Reference | None
     payloadSize: int
 
-    def __members(self) -> tuple:
-        return (
+    def _members(self) -> tuple:
+        properties = [
             self.uniformTypeIdentifier,
             self.name,
             self.uuid,
@@ -1388,18 +1457,19 @@ class ActionTestAttachment(XcresultObject):
             self.filename,
             self.payloadRef,
             self.payloadSize,
-        )
+        ]
+        return tuple(properties + list(super()._members()))
 
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, self.__class__):
             return False
 
         # pylint: disable=protected-access
-        return self.__members() == other.__members()
+        return self._members() == other._members()
         # pylint: enable=protected-access
 
     def __hash__(self) -> int:
-        return hash(self.__members())
+        return xchash(self)
 
 
 class ActionTestConfiguration(XcresultObject):
@@ -1413,19 +1483,22 @@ class ActionTestConfiguration(XcresultObject):
 
     values: SortedKeyValueArray
 
-    def __members(self) -> tuple:
-        return (self.values,)
+    def _members(self) -> tuple:
+        properties = [
+            self.values,
+        ]
+        return tuple(properties + list(super()._members()))
 
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, self.__class__):
             return False
 
         # pylint: disable=protected-access
-        return self.__members() == other.__members()
+        return self._members() == other._members()
         # pylint: enable=protected-access
 
     def __hash__(self) -> int:
-        return hash(self.__members())
+        return xchash(self)
 
 
 class ActionTestSummaryIdentifiableObject(ActionAbstractTestSummary):
@@ -1442,22 +1515,23 @@ class ActionTestSummaryIdentifiableObject(ActionAbstractTestSummary):
     identifier: str | None
     identifierURL: str | None
 
-    def __members(self) -> tuple:
-        return (
+    def _members(self) -> tuple:
+        properties = [
             self.identifier,
             self.identifierURL,
-        )
+        ]
+        return tuple(properties + list(super()._members()))
 
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, self.__class__):
             return False
 
         # pylint: disable=protected-access
-        return self.__members() == other.__members()
+        return self._members() == other._members()
         # pylint: enable=protected-access
 
     def __hash__(self) -> int:
-        return hash(self.__members())
+        return xchash(self)
 
 
 class ActivityLogAnalyzerControlFlowStep(ActivityLogAnalyzerStep):
@@ -1478,24 +1552,25 @@ class ActivityLogAnalyzerControlFlowStep(ActivityLogAnalyzerStep):
     endLocation: DocumentLocation | None
     edges: list[ActivityLogAnalyzerControlFlowStepEdge]
 
-    def __members(self) -> tuple:
-        return (
+    def _members(self) -> tuple:
+        properties = [
             self.title,
             self.startLocation,
             self.endLocation,
             self.edges,
-        )
+        ]
+        return tuple(properties + list(super()._members()))
 
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, self.__class__):
             return False
 
         # pylint: disable=protected-access
-        return self.__members() == other.__members()
+        return self._members() == other._members()
         # pylint: enable=protected-access
 
     def __hash__(self) -> int:
-        return hash(self.__members())
+        return xchash(self)
 
 
 class ActivityLogMessage(XcresultObject):
@@ -1519,26 +1594,27 @@ class ActivityLogMessage(XcresultObject):
     location: DocumentLocation | None
     annotations: list[ActivityLogMessageAnnotation]
 
-    def __members(self) -> tuple:
-        return (
+    def _members(self) -> tuple:
+        properties = [
             self.type,
             self.title,
             self.shortTitle,
             self.category,
             self.location,
             self.annotations,
-        )
+        ]
+        return tuple(properties + list(super()._members()))
 
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, self.__class__):
             return False
 
         # pylint: disable=protected-access
-        return self.__members() == other.__members()
+        return self._members() == other._members()
         # pylint: enable=protected-access
 
     def __hash__(self) -> int:
-        return hash(self.__members())
+        return xchash(self)
 
 
 class CodeCoverageInfo(XcresultObject):
@@ -1556,23 +1632,24 @@ class CodeCoverageInfo(XcresultObject):
     reportRef: Reference | None
     archiveRef: Reference | None
 
-    def __members(self) -> tuple:
-        return (
+    def _members(self) -> tuple:
+        properties = [
             self.hasCoverageData,
             self.reportRef,
             self.archiveRef,
-        )
+        ]
+        return tuple(properties + list(super()._members()))
 
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, self.__class__):
             return False
 
         # pylint: disable=protected-access
-        return self.__members() == other.__members()
+        return self._members() == other._members()
         # pylint: enable=protected-access
 
     def __hash__(self) -> int:
-        return hash(self.__members())
+        return xchash(self)
 
 
 class ConsoleLogItem(XcresultObject):
@@ -1594,25 +1671,26 @@ class ConsoleLogItem(XcresultObject):
     content: str
     logData: ConsoleLogItemLogData | None
 
-    def __members(self) -> tuple:
-        return (
+    def _members(self) -> tuple:
+        properties = [
             self.adaptorType,
             self.kind,
             self.timestamp,
             self.content,
             self.logData,
-        )
+        ]
+        return tuple(properties + list(super()._members()))
 
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, self.__class__):
             return False
 
         # pylint: disable=protected-access
-        return self.__members() == other.__members()
+        return self._members() == other._members()
         # pylint: enable=protected-access
 
     def __hash__(self) -> int:
-        return hash(self.__members())
+        return xchash(self)
 
 
 class SourceCodeSymbolInfo(XcresultObject):
@@ -1630,23 +1708,24 @@ class SourceCodeSymbolInfo(XcresultObject):
     symbolName: str | None
     location: SourceCodeLocation | None
 
-    def __members(self) -> tuple:
-        return (
+    def _members(self) -> tuple:
+        properties = [
             self.imageName,
             self.symbolName,
             self.location,
-        )
+        ]
+        return tuple(properties + list(super()._members()))
 
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, self.__class__):
             return False
 
         # pylint: disable=protected-access
-        return self.__members() == other.__members()
+        return self._members() == other._members()
         # pylint: enable=protected-access
 
     def __hash__(self) -> int:
-        return hash(self.__members())
+        return xchash(self)
 
 
 class TestArgument(XcresultObject):
@@ -1670,26 +1749,27 @@ class TestArgument(XcresultObject):
     typeName: str | None
     value: TestValue
 
-    def __members(self) -> tuple:
-        return (
+    def _members(self) -> tuple:
+        properties = [
             self.parameter,
             self.identifier,
             self.description,
             self.debugDescription,
             self.typeName,
             self.value,
-        )
+        ]
+        return tuple(properties + list(super()._members()))
 
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, self.__class__):
             return False
 
         # pylint: disable=protected-access
-        return self.__members() == other.__members()
+        return self._members() == other._members()
         # pylint: enable=protected-access
 
     def __hash__(self) -> int:
-        return hash(self.__members())
+        return xchash(self)
 
 
 class TestAssociatedError(XcresultObject):
@@ -1707,23 +1787,24 @@ class TestAssociatedError(XcresultObject):
     code: int | None
     userInfo: SortedKeyValueArray | None
 
-    def __members(self) -> tuple:
-        return (
+    def _members(self) -> tuple:
+        properties = [
             self.domain,
             self.code,
             self.userInfo,
-        )
+        ]
+        return tuple(properties + list(super()._members()))
 
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, self.__class__):
             return False
 
         # pylint: disable=protected-access
-        return self.__members() == other.__members()
+        return self._members() == other._members()
         # pylint: enable=protected-access
 
     def __hash__(self) -> int:
-        return hash(self.__members())
+        return xchash(self)
 
 
 class TestExpression(XcresultObject):
@@ -1741,23 +1822,24 @@ class TestExpression(XcresultObject):
     value: TestValue | None
     subexpressions: list["TestExpression"]
 
-    def __members(self) -> tuple:
-        return (
+    def _members(self) -> tuple:
+        properties = [
             self.sourceCode,
             self.value,
             self.subexpressions,
-        )
+        ]
+        return tuple(properties + list(super()._members()))
 
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, self.__class__):
             return False
 
         # pylint: disable=protected-access
-        return self.__members() == other.__members()
+        return self._members() == other._members()
         # pylint: enable=protected-access
 
     def __hash__(self) -> int:
-        return hash(self.__members())
+        return xchash(self)
 
 
 class TestFailureIssueSummary(IssueSummary):
@@ -1801,19 +1883,22 @@ class TestFailureIssueSummary(IssueSummary):
         )
         # pylint: enable=no-member
 
-    def __members(self) -> tuple:
-        return (self.testCaseName,)
+    def _members(self) -> tuple:
+        properties = [
+            self.testCaseName,
+        ]
+        return tuple(properties + list(super()._members()))
 
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, self.__class__):
             return False
 
         # pylint: disable=protected-access
-        return self.__members() == other.__members()
+        return self._members() == other._members()
         # pylint: enable=protected-access
 
     def __hash__(self) -> int:
-        return hash(self.__members())
+        return xchash(self)
 
 
 class TestIssueSummary(IssueSummary):
@@ -1828,19 +1913,22 @@ class TestIssueSummary(IssueSummary):
 
     testCaseName: str
 
-    def __members(self) -> tuple:
-        return (self.testCaseName,)
+    def _members(self) -> tuple:
+        properties = [
+            self.testCaseName,
+        ]
+        return tuple(properties + list(super()._members()))
 
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, self.__class__):
             return False
 
         # pylint: disable=protected-access
-        return self.__members() == other.__members()
+        return self._members() == other._members()
         # pylint: enable=protected-access
 
     def __hash__(self) -> int:
-        return hash(self.__members())
+        return xchash(self)
 
 
 class ActionTestActivitySummary(XcresultObject):
@@ -1872,8 +1960,8 @@ class ActionTestActivitySummary(XcresultObject):
     expectedFailureIDs: list[str]
     warningSummaryIDs: list[str]
 
-    def __members(self) -> tuple:
-        return (
+    def _members(self) -> tuple:
+        properties = [
             self.title,
             self.activityType,
             self.uuid,
@@ -1884,18 +1972,19 @@ class ActionTestActivitySummary(XcresultObject):
             self.failureSummaryIDs,
             self.expectedFailureIDs,
             self.warningSummaryIDs,
-        )
+        ]
+        return tuple(properties + list(super()._members()))
 
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, self.__class__):
             return False
 
         # pylint: disable=protected-access
-        return self.__members() == other.__members()
+        return self._members() == other._members()
         # pylint: enable=protected-access
 
     def __hash__(self) -> int:
-        return hash(self.__members())
+        return xchash(self)
 
 
 class ActionTestMetadata(ActionTestSummaryIdentifiableObject):
@@ -1920,26 +2009,27 @@ class ActionTestMetadata(ActionTestSummaryIdentifiableObject):
     failureSummariesCount: int
     activitySummariesCount: int
 
-    def __members(self) -> tuple:
-        return (
+    def _members(self) -> tuple:
+        properties = [
             self.testStatus,
             self.duration,
             self.summaryRef,
             self.performanceMetricsCount,
             self.failureSummariesCount,
             self.activitySummariesCount,
-        )
+        ]
+        return tuple(properties + list(super()._members()))
 
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, self.__class__):
             return False
 
         # pylint: disable=protected-access
-        return self.__members() == other.__members()
+        return self._members() == other._members()
         # pylint: enable=protected-access
 
     def __hash__(self) -> int:
-        return hash(self.__members())
+        return xchash(self)
 
 
 class ActionTestSummaryGroup(ActionTestSummaryIdentifiableObject):
@@ -1966,8 +2056,8 @@ class ActionTestSummaryGroup(ActionTestSummaryIdentifiableObject):
     trackedIssues: list[IssueTrackingMetadata]
     tags: list[TestTag]
 
-    def __members(self) -> tuple:
-        return (
+    def _members(self) -> tuple:
+        properties = [
             self.duration,
             self.subtests,
             self.skipNoticeSummary,
@@ -1975,18 +2065,19 @@ class ActionTestSummaryGroup(ActionTestSummaryIdentifiableObject):
             self.documentation,
             self.trackedIssues,
             self.tags,
-        )
+        ]
+        return tuple(properties + list(super()._members()))
 
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, self.__class__):
             return False
 
         # pylint: disable=protected-access
-        return self.__members() == other.__members()
+        return self._members() == other._members()
         # pylint: enable=protected-access
 
     def __hash__(self) -> int:
-        return hash(self.__members())
+        return xchash(self)
 
 
 class ActivityLogAnalyzerResultMessage(ActivityLogMessage):
@@ -2005,23 +2096,24 @@ class ActivityLogAnalyzerResultMessage(ActivityLogMessage):
     resultType: str | None
     keyEventIndex: int
 
-    def __members(self) -> tuple:
-        return (
+    def _members(self) -> tuple:
+        properties = [
             self.steps,
             self.resultType,
             self.keyEventIndex,
-        )
+        ]
+        return tuple(properties + list(super()._members()))
 
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, self.__class__):
             return False
 
         # pylint: disable=protected-access
-        return self.__members() == other.__members()
+        return self._members() == other._members()
         # pylint: enable=protected-access
 
     def __hash__(self) -> int:
-        return hash(self.__members())
+        return xchash(self)
 
 
 class ActivityLogAnalyzerWarningMessage(ActivityLogMessage):
@@ -2032,19 +2124,20 @@ class ActivityLogAnalyzerWarningMessage(ActivityLogMessage):
       * Kind: object
     """
 
-    def __members(self) -> tuple:
-        return ()
+    def _members(self) -> tuple:
+        properties = []
+        return tuple(properties + list(super()._members()))
 
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, self.__class__):
             return False
 
         # pylint: disable=protected-access
-        return self.__members() == other.__members()
+        return self._members() == other._members()
         # pylint: enable=protected-access
 
     def __hash__(self) -> int:
-        return hash(self.__members())
+        return xchash(self)
 
 
 class ActivityLogSection(XcresultObject):
@@ -2074,8 +2167,8 @@ class ActivityLogSection(XcresultObject):
     messages: list[ActivityLogMessage]
     attachments: list[ActivityLogSectionAttachment]
 
-    def __members(self) -> tuple:
-        return (
+    def _members(self) -> tuple:
+        properties = [
             self.domainType,
             self.title,
             self.startTime,
@@ -2085,18 +2178,19 @@ class ActivityLogSection(XcresultObject):
             self.subsections,
             self.messages,
             self.attachments,
-        )
+        ]
+        return tuple(properties + list(super()._members()))
 
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, self.__class__):
             return False
 
         # pylint: disable=protected-access
-        return self.__members() == other.__members()
+        return self._members() == other._members()
         # pylint: enable=protected-access
 
     def __hash__(self) -> int:
-        return hash(self.__members())
+        return xchash(self)
 
 
 class ConsoleLogSection(XcresultObject):
@@ -2112,22 +2206,23 @@ class ConsoleLogSection(XcresultObject):
     title: str
     items: list[ConsoleLogItem]
 
-    def __members(self) -> tuple:
-        return (
+    def _members(self) -> tuple:
+        properties = [
             self.title,
             self.items,
-        )
+        ]
+        return tuple(properties + list(super()._members()))
 
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, self.__class__):
             return False
 
         # pylint: disable=protected-access
-        return self.__members() == other.__members()
+        return self._members() == other._members()
         # pylint: enable=protected-access
 
     def __hash__(self) -> int:
-        return hash(self.__members())
+        return xchash(self)
 
 
 class ResultIssueSummaries(XcresultObject):
@@ -2149,25 +2244,26 @@ class ResultIssueSummaries(XcresultObject):
     warningSummaries: list[IssueSummary]
     testWarningSummaries: list[TestIssueSummary]
 
-    def __members(self) -> tuple:
-        return (
+    def _members(self) -> tuple:
+        properties = [
             self.analyzerWarningSummaries,
             self.errorSummaries,
             self.testFailureSummaries,
             self.warningSummaries,
             self.testWarningSummaries,
-        )
+        ]
+        return tuple(properties + list(super()._members()))
 
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, self.__class__):
             return False
 
         # pylint: disable=protected-access
-        return self.__members() == other.__members()
+        return self._members() == other._members()
         # pylint: enable=protected-access
 
     def __hash__(self) -> int:
-        return hash(self.__members())
+        return xchash(self)
 
 
 class SourceCodeFrame(XcresultObject):
@@ -2183,22 +2279,23 @@ class SourceCodeFrame(XcresultObject):
     addressString: str | None
     symbolInfo: SourceCodeSymbolInfo | None
 
-    def __members(self) -> tuple:
-        return (
+    def _members(self) -> tuple:
+        properties = [
             self.addressString,
             self.symbolInfo,
-        )
+        ]
+        return tuple(properties + list(super()._members()))
 
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, self.__class__):
             return False
 
         # pylint: disable=protected-access
-        return self.__members() == other.__members()
+        return self._members() == other._members()
         # pylint: enable=protected-access
 
     def __hash__(self) -> int:
-        return hash(self.__members())
+        return xchash(self)
 
 
 class ActionResult(XcresultObject):
@@ -2230,8 +2327,8 @@ class ActionResult(XcresultObject):
     diagnosticsRef: Reference | None
     consoleLogRef: Reference | None
 
-    def __members(self) -> tuple:
-        return (
+    def _members(self) -> tuple:
+        properties = [
             self.resultName,
             self.status,
             self.metrics,
@@ -2242,18 +2339,19 @@ class ActionResult(XcresultObject):
             self.testsRef,
             self.diagnosticsRef,
             self.consoleLogRef,
-        )
+        ]
+        return tuple(properties + list(super()._members()))
 
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, self.__class__):
             return False
 
         # pylint: disable=protected-access
-        return self.__members() == other.__members()
+        return self._members() == other._members()
         # pylint: enable=protected-access
 
     def __hash__(self) -> int:
-        return hash(self.__members())
+        return xchash(self)
 
 
 class ActivityLogCommandInvocationSection(ActivityLogSection):
@@ -2272,23 +2370,24 @@ class ActivityLogCommandInvocationSection(ActivityLogSection):
     emittedOutput: str
     exitCode: int | None
 
-    def __members(self) -> tuple:
-        return (
+    def _members(self) -> tuple:
+        properties = [
             self.commandDetails,
             self.emittedOutput,
             self.exitCode,
-        )
+        ]
+        return tuple(properties + list(super()._members()))
 
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, self.__class__):
             return False
 
         # pylint: disable=protected-access
-        return self.__members() == other.__members()
+        return self._members() == other._members()
         # pylint: enable=protected-access
 
     def __hash__(self) -> int:
-        return hash(self.__members())
+        return xchash(self)
 
 
 class ActivityLogMajorSection(ActivityLogSection):
@@ -2303,19 +2402,22 @@ class ActivityLogMajorSection(ActivityLogSection):
 
     subtitle: str
 
-    def __members(self) -> tuple:
-        return (self.subtitle,)
+    def _members(self) -> tuple:
+        properties = [
+            self.subtitle,
+        ]
+        return tuple(properties + list(super()._members()))
 
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, self.__class__):
             return False
 
         # pylint: disable=protected-access
-        return self.__members() == other.__members()
+        return self._members() == other._members()
         # pylint: enable=protected-access
 
     def __hash__(self) -> int:
-        return hash(self.__members())
+        return xchash(self)
 
 
 class ActivityLogUnitTestSection(ActivityLogSection):
@@ -2346,8 +2448,8 @@ class ActivityLogUnitTestSection(ActivityLogSection):
     runnablePath: str | None
     runnableUTI: str | None
 
-    def __members(self) -> tuple:
-        return (
+    def _members(self) -> tuple:
+        properties = [
             self.testName,
             self.suiteName,
             self.summary,
@@ -2357,18 +2459,19 @@ class ActivityLogUnitTestSection(ActivityLogSection):
             self.wasSkipped,
             self.runnablePath,
             self.runnableUTI,
-        )
+        ]
+        return tuple(properties + list(super()._members()))
 
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, self.__class__):
             return False
 
         # pylint: disable=protected-access
-        return self.__members() == other.__members()
+        return self._members() == other._members()
         # pylint: enable=protected-access
 
     def __hash__(self) -> int:
-        return hash(self.__members())
+        return xchash(self)
 
 
 class SourceCodeContext(XcresultObject):
@@ -2384,22 +2487,23 @@ class SourceCodeContext(XcresultObject):
     location: SourceCodeLocation | None
     callStack: list[SourceCodeFrame]
 
-    def __members(self) -> tuple:
-        return (
+    def _members(self) -> tuple:
+        properties = [
             self.location,
             self.callStack,
-        )
+        ]
+        return tuple(properties + list(super()._members()))
 
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, self.__class__):
             return False
 
         # pylint: disable=protected-access
-        return self.__members() == other.__members()
+        return self._members() == other._members()
         # pylint: enable=protected-access
 
     def __hash__(self) -> int:
-        return hash(self.__members())
+        return xchash(self)
 
 
 class ActionRecord(XcresultObject):
@@ -2429,8 +2533,8 @@ class ActionRecord(XcresultObject):
     actionResult: ActionResult
     testPlanName: str | None
 
-    def __members(self) -> tuple:
-        return (
+    def _members(self) -> tuple:
+        properties = [
             self.schemeCommandName,
             self.schemeTaskName,
             self.title,
@@ -2440,18 +2544,19 @@ class ActionRecord(XcresultObject):
             self.buildResult,
             self.actionResult,
             self.testPlanName,
-        )
+        ]
+        return tuple(properties + list(super()._members()))
 
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, self.__class__):
             return False
 
         # pylint: disable=protected-access
-        return self.__members() == other.__members()
+        return self._members() == other._members()
         # pylint: enable=protected-access
 
     def __hash__(self) -> int:
-        return hash(self.__members())
+        return xchash(self)
 
 
 class ActionTestFailureSummary(XcresultObject):
@@ -2489,8 +2594,8 @@ class ActionTestFailureSummary(XcresultObject):
     isTopLevelFailure: bool
     expression: TestExpression | None
 
-    def __members(self) -> tuple:
-        return (
+    def _members(self) -> tuple:
+        properties = [
             self.message,
             self.fileName,
             self.lineNumber,
@@ -2504,18 +2609,19 @@ class ActionTestFailureSummary(XcresultObject):
             self.timestamp,
             self.isTopLevelFailure,
             self.expression,
-        )
+        ]
+        return tuple(properties + list(super()._members()))
 
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, self.__class__):
             return False
 
         # pylint: disable=protected-access
-        return self.__members() == other.__members()
+        return self._members() == other._members()
         # pylint: enable=protected-access
 
     def __hash__(self) -> int:
-        return hash(self.__members())
+        return xchash(self)
 
 
 class ActionTestIssueSummary(XcresultObject):
@@ -2547,8 +2653,8 @@ class ActionTestIssueSummary(XcresultObject):
     sourceCodeContext: SourceCodeContext | None
     timestamp: datetime.datetime | None
 
-    def __members(self) -> tuple:
-        return (
+    def _members(self) -> tuple:
+        properties = [
             self.message,
             self.fileName,
             self.lineNumber,
@@ -2559,18 +2665,19 @@ class ActionTestIssueSummary(XcresultObject):
             self.associatedError,
             self.sourceCodeContext,
             self.timestamp,
-        )
+        ]
+        return tuple(properties + list(super()._members()))
 
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, self.__class__):
             return False
 
         # pylint: disable=protected-access
-        return self.__members() == other.__members()
+        return self._members() == other._members()
         # pylint: enable=protected-access
 
     def __hash__(self) -> int:
-        return hash(self.__members())
+        return xchash(self)
 
 
 class ActivityLogTargetBuildSection(ActivityLogMajorSection):
@@ -2585,19 +2692,22 @@ class ActivityLogTargetBuildSection(ActivityLogMajorSection):
 
     productType: str | None
 
-    def __members(self) -> tuple:
-        return (self.productType,)
+    def _members(self) -> tuple:
+        properties = [
+            self.productType,
+        ]
+        return tuple(properties + list(super()._members()))
 
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, self.__class__):
             return False
 
         # pylint: disable=protected-access
-        return self.__members() == other.__members()
+        return self._members() == other._members()
         # pylint: enable=protected-access
 
     def __hash__(self) -> int:
-        return hash(self.__members())
+        return xchash(self)
 
 
 class ActionTestExpectedFailure(XcresultObject):
@@ -2617,24 +2727,25 @@ class ActionTestExpectedFailure(XcresultObject):
     failureSummary: ActionTestFailureSummary | None
     isTopLevelFailure: bool
 
-    def __members(self) -> tuple:
-        return (
+    def _members(self) -> tuple:
+        properties = [
             self.uuid,
             self.failureReason,
             self.failureSummary,
             self.isTopLevelFailure,
-        )
+        ]
+        return tuple(properties + list(super()._members()))
 
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, self.__class__):
             return False
 
         # pylint: disable=protected-access
-        return self.__members() == other.__members()
+        return self._members() == other._members()
         # pylint: enable=protected-access
 
     def __hash__(self) -> int:
-        return hash(self.__members())
+        return xchash(self)
 
 
 class ActionTestableSummary(ActionAbstractTestSummary):
@@ -2665,8 +2776,8 @@ class ActionTestableSummary(ActionAbstractTestSummary):
     testLanguage: str | None
     testRegion: str | None
 
-    def __members(self) -> tuple:
-        return (
+    def _members(self) -> tuple:
+        properties = [
             self.identifierURL,
             self.projectRelativePath,
             self.targetName,
@@ -2676,18 +2787,19 @@ class ActionTestableSummary(ActionAbstractTestSummary):
             self.failureSummaries,
             self.testLanguage,
             self.testRegion,
-        )
+        ]
+        return tuple(properties + list(super()._members()))
 
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, self.__class__):
             return False
 
         # pylint: disable=protected-access
-        return self.__members() == other.__members()
+        return self._members() == other._members()
         # pylint: enable=protected-access
 
     def __hash__(self) -> int:
-        return hash(self.__members())
+        return xchash(self)
 
 
 class ActionsInvocationRecord(XcresultObject):
@@ -2709,25 +2821,26 @@ class ActionsInvocationRecord(XcresultObject):
     actions: list[ActionRecord]
     archive: ArchiveInfo | None
 
-    def __members(self) -> tuple:
-        return (
+    def _members(self) -> tuple:
+        properties = [
             self.metadataRef,
             self.metrics,
             self.issues,
             self.actions,
             self.archive,
-        )
+        ]
+        return tuple(properties + list(super()._members()))
 
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, self.__class__):
             return False
 
         # pylint: disable=protected-access
-        return self.__members() == other.__members()
+        return self._members() == other._members()
         # pylint: enable=protected-access
 
     def __hash__(self) -> int:
-        return hash(self.__members())
+        return xchash(self)
 
 
 class ActionTestPlanRunSummary(ActionAbstractTestSummary):
@@ -2742,19 +2855,22 @@ class ActionTestPlanRunSummary(ActionAbstractTestSummary):
 
     testableSummaries: list[ActionTestableSummary]
 
-    def __members(self) -> tuple:
-        return (self.testableSummaries,)
+    def _members(self) -> tuple:
+        properties = [
+            self.testableSummaries,
+        ]
+        return tuple(properties + list(super()._members()))
 
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, self.__class__):
             return False
 
         # pylint: disable=protected-access
-        return self.__members() == other.__members()
+        return self._members() == other._members()
         # pylint: enable=protected-access
 
     def __hash__(self) -> int:
-        return hash(self.__members())
+        return xchash(self)
 
 
 class ActionTestSummary(ActionTestSummaryIdentifiableObject):
@@ -2797,8 +2913,8 @@ class ActionTestSummary(ActionTestSummaryIdentifiableObject):
     trackedIssues: list[IssueTrackingMetadata]
     tags: list[TestTag]
 
-    def __members(self) -> tuple:
-        return (
+    def _members(self) -> tuple:
+        properties = [
             self.testStatus,
             self.duration,
             self.performanceMetrics,
@@ -2814,18 +2930,19 @@ class ActionTestSummary(ActionTestSummaryIdentifiableObject):
             self.documentation,
             self.trackedIssues,
             self.tags,
-        )
+        ]
+        return tuple(properties + list(super()._members()))
 
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, self.__class__):
             return False
 
         # pylint: disable=protected-access
-        return self.__members() == other.__members()
+        return self._members() == other._members()
         # pylint: enable=protected-access
 
     def __hash__(self) -> int:
-        return hash(self.__members())
+        return xchash(self)
 
 
 class ActionTestPlanRunSummaries(XcresultObject):
@@ -2839,19 +2956,22 @@ class ActionTestPlanRunSummaries(XcresultObject):
 
     summaries: list[ActionTestPlanRunSummary]
 
-    def __members(self) -> tuple:
-        return (self.summaries,)
+    def _members(self) -> tuple:
+        properties = [
+            self.summaries,
+        ]
+        return tuple(properties + list(super()._members()))
 
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, self.__class__):
             return False
 
         # pylint: disable=protected-access
-        return self.__members() == other.__members()
+        return self._members() == other._members()
         # pylint: enable=protected-access
 
     def __hash__(self) -> int:
-        return hash(self.__members())
+        return xchash(self)
 
 
 _CURRENT_MODULE = sys.modules[__name__]
