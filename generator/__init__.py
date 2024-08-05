@@ -205,11 +205,17 @@ class Definition:
     def _add_dunder_methods(self) -> list[str]:
         output = [""]
 
-        output.append("    def __members(self) -> tuple:")
-        output.append("        return (")
+        output.append("    def _members(self) -> tuple:")
+        output.append("        properties = [")
         for name, _ in self.properties:
             output.append(f"            self.{name},")
-        output.append("        )")
+        output.append("        ]")
+
+        if self.name == "XcresultObject":
+            output.append("        return tuple(properties)")
+        else:
+            output.append("        return tuple(properties + list(super()._members()))")
+
         output.append("")
 
         output.append("    def __eq__(self, other: Any) -> bool:")
@@ -217,12 +223,12 @@ class Definition:
         output.append("            return False")
         output.append("")
         output.append("        # pylint: disable=protected-access")
-        output.append("        return self.__members() == other.__members()")
+        output.append("        return self._members() == other._members()")
         output.append("        # pylint: enable=protected-access")
         output.append("")
 
         output.append("    def __hash__(self) -> int:")
-        output.append("        return hash(self.__members())")
+        output.append("        return xchash(self)")
         output.append("")
 
         return output
@@ -397,6 +403,33 @@ def generate(output_path: str):
         output_file.write("# pylint: disable=too-many-lines\n")
         output_file.write("# pylint: disable=invalid-name\n")
         output_file.write("\n\n")
+
+        output_file.write("def xchash(item: Any) -> int:\n")
+        output_file.write("    all_hashes = []\n")
+        output_file.write("\n")
+        output_file.write("    if isinstance(item, list):\n")
+        output_file.write("        for sub_item in item:\n")
+        output_file.write("            all_hashes.append(xchash(sub_item))\n")
+        output_file.write("        return hash(tuple(all_hashes))\n")
+        output_file.write("\n")
+        output_file.write("    if isinstance(item, dict):\n")
+        output_file.write("        for key, value in item.items():\n")
+        output_file.write("            all_hashes.append(xchash(key))\n")
+        output_file.write("            all_hashes.append(xchash(value))\n")
+        output_file.write("        return hash(tuple(all_hashes))\n")
+        output_file.write("\n")
+        output_file.write('    if not hasattr(item, "_members"):\n')
+        output_file.write("        return hash(item)\n")
+        output_file.write("\n")
+        output_file.write('    members_call = getattr(item, "_members", None)\n')
+        output_file.write("    if members_call is None:\n")
+        output_file.write("        return hash(item)\n")
+        output_file.write("\n")
+        output_file.write("    for member in members_call():\n")
+        output_file.write("        all_hashes.append(xchash(member))\n")
+        output_file.write("\n")
+        output_file.write("    return hash(tuple(all_hashes))\n")
+        output_file.write("\n")
 
         for definition in definitions:
             for line in definition.python():
