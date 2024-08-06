@@ -10,7 +10,13 @@ import urllib.parse
 # pylint: disable=invalid-name
 
 
+def flatten(list_of_lists: list[Any]) -> list[Any]:
+    """Flatten a list of lists."""
+    return [item for sublist in list_of_lists for item in sublist]
+
+
 def xchash(item: Any) -> int:
+    """Generate a hash for an object."""
     all_hashes = []
 
     if isinstance(item, list):
@@ -41,8 +47,7 @@ class XcresultObject:
     """Generated from xcresulttool format description."""
 
     def _members(self) -> tuple:
-        properties = []
-        return tuple(properties)
+        return ()
 
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, self.__class__):
@@ -2009,6 +2014,13 @@ class ActionTestMetadata(ActionTestSummaryIdentifiableObject):
     failureSummariesCount: int
     activitySummariesCount: int
 
+    def all_subtests(self) -> list:
+        """Get all subtests.
+
+        :returns: All subtests - just self in this case
+        """
+        return [self]
+
     def _members(self) -> tuple:
         properties = [
             self.testStatus,
@@ -2055,6 +2067,22 @@ class ActionTestSummaryGroup(ActionTestSummaryIdentifiableObject):
     documentation: list[TestDocumentation]
     trackedIssues: list[IssueTrackingMetadata]
     tags: list[TestTag]
+
+    def all_subtests(self) -> list:
+        """Get all subtests.
+
+        :returns: All subtests
+        """
+        if not self.subtests:
+            return []
+
+        return flatten(
+            [
+                test.all_subtests()
+                for test in self.subtests
+                if isinstance(test, (ActionTestSummaryGroup, ActionTestMetadata))
+            ]
+        )
 
     def _members(self) -> tuple:
         properties = [
@@ -2123,10 +2151,6 @@ class ActivityLogAnalyzerWarningMessage(ActivityLogMessage):
       * Supertype: ActivityLogMessage
       * Kind: object
     """
-
-    def _members(self) -> tuple:
-        properties = []
-        return tuple(properties + list(super()._members()))
 
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, self.__class__):
@@ -2775,6 +2799,22 @@ class ActionTestableSummary(ActionAbstractTestSummary):
     failureSummaries: list[ActionTestFailureSummary]
     testLanguage: str | None
     testRegion: str | None
+
+    def all_tests(self) -> list:
+        """Get all subtests.
+
+        :returns: All subtests
+        """
+        if not self.tests:
+            return []
+
+        return flatten(
+            [
+                test.all_subtests()
+                for test in self.tests
+                if isinstance(test, (ActionTestSummaryGroup, ActionTestMetadata))
+            ]
+        )
 
     def _members(self) -> tuple:
         properties = [

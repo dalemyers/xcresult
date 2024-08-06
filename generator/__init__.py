@@ -205,18 +205,18 @@ class Definition:
     def _add_dunder_methods(self) -> list[str]:
         output = [""]
 
-        output.append("    def _members(self) -> tuple:")
-        output.append("        properties = [")
-        for name, _ in self.properties:
-            output.append(f"            self.{name},")
-        output.append("        ]")
+        if len(self.properties) > 0 or self.name == "XcresultObject":
+            output.append("    def _members(self) -> tuple:")
+            if self.name == "XcresultObject":
+                output.append("        return ()")
+            else:
+                output.append("        properties = [")
+                for name, _ in self.properties:
+                    output.append(f"            self.{name},")
+                output.append("        ]")
+                output.append("        return tuple(properties + list(super()._members()))")
 
-        if self.name == "XcresultObject":
-            output.append("        return tuple(properties)")
-        else:
-            output.append("        return tuple(properties + list(super()._members()))")
-
-        output.append("")
+            output.append("")
 
         output.append("    def __eq__(self, other: Any) -> bool:")
         output.append("        if not isinstance(other, self.__class__):")
@@ -344,8 +344,7 @@ def order_definitions(definitions: list[Definition]) -> list[Definition]:
     all_output = []
     definition_dict = {definition.name: definition for definition in definitions}
     dependency_types = {
-        definition.name: set(definition.dependency_types())
-        for definition in definitions
+        definition.name: set(definition.dependency_types()) for definition in definitions
     }
 
     while len(dependency_types) > 0:
@@ -402,9 +401,15 @@ def generate(output_path: str):
         output_file.write("\n\n")
         output_file.write("# pylint: disable=too-many-lines\n")
         output_file.write("# pylint: disable=invalid-name\n")
-        output_file.write("\n\n")
+        output_file.write("\n")
+
+        output_file.write("def flatten(list_of_lists: list[Any]) -> list[Any]:\n")
+        output_file.write('    """Flatten a list of lists."""\n')
+        output_file.write("    return [item for sublist in list_of_lists for item in sublist]\n")
+        output_file.write("\n")
 
         output_file.write("def xchash(item: Any) -> int:\n")
+        output_file.write('    """Generate a hash for an object."""\n')
         output_file.write("    all_hashes = []\n")
         output_file.write("\n")
         output_file.write("    if isinstance(item, list):\n")
@@ -439,9 +444,7 @@ def generate(output_path: str):
 
         output_file.write("_CURRENT_MODULE = sys.modules[__name__]\n")
         output_file.write("_MODEL_NAMES = dir(_CURRENT_MODULE)\n")
-        output_file.write(
-            '_MODEL_NAMES = [m for m in _MODEL_NAMES if not m.startswith("__")]\n'
-        )
+        output_file.write('_MODEL_NAMES = [m for m in _MODEL_NAMES if not m.startswith("__")]\n')
         output_file.write(
             "_RESOLVED_MODELS = [getattr(_CURRENT_MODULE, m) for m in _MODEL_NAMES]\n"
         )
@@ -449,17 +452,11 @@ def generate(output_path: str):
         output_file.write("_RESOLVED_MODELS = [\n")
         output_file.write("    m\n")
         output_file.write("    for m in _RESOLVED_MODELS\n")
-        output_file.write(
-            "    if type(m) == type(type) and issubclass(m, XcresultObject)\n"
-        )
+        output_file.write("    if type(m) == type(type) and issubclass(m, XcresultObject)\n")
         output_file.write("]\n")
         output_file.write("# pylint: enable=unidiomatic-typecheck\n")
         output_file.write("MODELS = {m.__name__: m for m in _RESOLVED_MODELS}\n")
 
 
 if __name__ == "__main__":
-    generate(
-        os.path.abspath(
-            os.path.join(os.path.dirname(__file__), "..", "xcresult", "model.py")
-        )
-    )
+    generate(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "xcresult", "model.py")))

@@ -6,6 +6,7 @@ import logging
 import os
 import subprocess
 from typing import Any, cast, get_type_hints
+import uuid
 
 from xcresult import model
 from xcresult.exceptions import UnsupportedTypeException
@@ -261,11 +262,17 @@ def export_action_test_summary_group(
                 if attachment.payloadRef is None:
                     continue
                 identifier = attachment.payloadRef.id
+
+                if attachment.filename is None:
+                    file_name = str(uuid.uuid4())
+                else:
+                    file_name = attachment.filename
+
                 export_attachment(
                     results_path,
                     identifier,
                     "file",
-                    os.path.join(output_path, "summary", relative_path, attachment.filename),
+                    os.path.join(output_path, "summary", relative_path, file_name),
                 )
 
     if data.failureSummaries:
@@ -277,11 +284,17 @@ def export_action_test_summary_group(
                 if attachment.payloadRef is None:
                     continue
                 identifier = attachment.payloadRef.id
+
+                if attachment.filename is None:
+                    file_name = str(uuid.uuid4())
+                else:
+                    file_name = attachment.filename
+
                 export_attachment(
                     results_path,
                     identifier,
                     "file",
-                    os.path.join(output_path, "failure", relative_path, attachment.filename),
+                    os.path.join(output_path, "failure", relative_path, file_name),
                 )
 
 

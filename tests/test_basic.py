@@ -23,7 +23,10 @@ def test_deserialization_1():
     """Test deserialization."""
     sample = {
         "_type": {"_name": "ActionPlatformRecord"},
-        "identifier": {"_type": {"_name": "String"}, "_value": "com.apple.platform.macosx"},
+        "identifier": {
+            "_type": {"_name": "String"},
+            "_value": "com.apple.platform.macosx",
+        },
         "userDescription": {"_type": {"_name": "String"}, "_value": "macOS"},
     }
     result = xcresult.xcresulttool.deserialize(sample)
@@ -53,7 +56,10 @@ def test_deserialization_2():
                                     "_value": "0~qephX2M0nhu_VVtr0Gp-iT54M4AP7pUW_eJen0hhFAEDElwO-xNmOD2zQu1PCt0FPRMVWunQX3NmXmGel3KIeA==",
                                 },
                             },
-                            "hasCoverageData": {"_type": {"_name": "Bool"}, "_value": "true"},
+                            "hasCoverageData": {
+                                "_type": {"_name": "Bool"},
+                                "_value": "true",
+                            },
                             "reportRef": {
                                 "_type": {"_name": "Reference"},
                                 "id": {
@@ -127,9 +133,15 @@ def test_deserialization_2():
                         "metrics": {
                             "_type": {"_name": "ResultMetrics"},
                             "testsCount": {"_type": {"_name": "Int"}, "_value": "25"},
-                            "testsFailedCount": {"_type": {"_name": "Int"}, "_value": "1"},
+                            "testsFailedCount": {
+                                "_type": {"_name": "Int"},
+                                "_value": "1",
+                            },
                         },
-                        "resultName": {"_type": {"_name": "String"}, "_value": "action"},
+                        "resultName": {
+                            "_type": {"_name": "String"},
+                            "_value": "action",
+                        },
                         "status": {"_type": {"_name": "String"}, "_value": "failed"},
                         "testsRef": {
                             "_type": {"_name": "Reference"},
@@ -152,7 +164,10 @@ def test_deserialization_2():
                         "issues": {"_type": {"_name": "ResultIssueSummaries"}},
                         "metrics": {"_type": {"_name": "ResultMetrics"}},
                         "resultName": {"_type": {"_name": "String"}, "_value": "build"},
-                        "status": {"_type": {"_name": "String"}, "_value": "notRequested"},
+                        "status": {
+                            "_type": {"_name": "String"},
+                            "_value": "notRequested",
+                        },
                     },
                     "endedTime": {
                         "_type": {"_name": "Date"},
@@ -166,24 +181,39 @@ def test_deserialization_2():
                         },
                         "localComputerRecord": {
                             "_type": {"_name": "ActionDeviceRecord"},
-                            "busSpeedInMHz": {"_type": {"_name": "Int"}, "_value": "400"},
+                            "busSpeedInMHz": {
+                                "_type": {"_name": "Int"},
+                                "_value": "400",
+                            },
                             "cpuCount": {"_type": {"_name": "Int"}, "_value": "1"},
                             "cpuKind": {
                                 "_type": {"_name": "String"},
                                 "_value": "8-Core Intel Core i9",
                             },
-                            "cpuSpeedInMHz": {"_type": {"_name": "Int"}, "_value": "2400"},
+                            "cpuSpeedInMHz": {
+                                "_type": {"_name": "Int"},
+                                "_value": "2400",
+                            },
                             "identifier": {
                                 "_type": {"_name": "String"},
                                 "_value": "8C3C9D24-E5A2-5FA6-B69E-B122A69DC18E",
                             },
-                            "isConcreteDevice": {"_type": {"_name": "Bool"}, "_value": "true"},
+                            "isConcreteDevice": {
+                                "_type": {"_name": "Bool"},
+                                "_value": "true",
+                            },
                             "logicalCPUCoresPerPackage": {
                                 "_type": {"_name": "Int"},
                                 "_value": "16",
                             },
-                            "modelCode": {"_type": {"_name": "String"}, "_value": "MacBookPro15,1"},
-                            "modelName": {"_type": {"_name": "String"}, "_value": "MacBook Pro"},
+                            "modelCode": {
+                                "_type": {"_name": "String"},
+                                "_value": "MacBookPro15,1",
+                            },
+                            "modelName": {
+                                "_type": {"_name": "String"},
+                                "_value": "MacBook Pro",
+                            },
                             "modelUTI": {
                                 "_type": {"_name": "String"},
                                 "_value": "com.apple.macbookpro-15-retina-touchid-2018",
@@ -216,18 +246,33 @@ def test_deserialization_2():
                                     "_value": "macOS",
                                 },
                             },
-                            "ramSizeInMegabytes": {"_type": {"_name": "Int"}, "_value": "32768"},
+                            "ramSizeInMegabytes": {
+                                "_type": {"_name": "Int"},
+                                "_value": "32768",
+                            },
                         },
-                        "targetArchitecture": {"_type": {"_name": "String"}, "_value": "x86_64"},
+                        "targetArchitecture": {
+                            "_type": {"_name": "String"},
+                            "_value": "x86_64",
+                        },
                         "targetDeviceRecord": {
                             "_type": {"_name": "ActionDeviceRecord"},
                             "identifier": {
                                 "_type": {"_name": "String"},
                                 "_value": "C155A343-9D28-47D5-B96D-1F3D2504CCCC",
                             },
-                            "isConcreteDevice": {"_type": {"_name": "Bool"}, "_value": "true"},
-                            "modelCode": {"_type": {"_name": "String"}, "_value": "iPhone10,4"},
-                            "modelName": {"_type": {"_name": "String"}, "_value": "iPhone 8"},
+                            "isConcreteDevice": {
+                                "_type": {"_name": "Bool"},
+                                "_value": "true",
+                            },
+                            "modelCode": {
+                                "_type": {"_name": "String"},
+                                "_value": "iPhone10,4",
+                            },
+                            "modelName": {
+                                "_type": {"_name": "String"},
+                                "_value": "iPhone 8",
+                            },
                             "modelUTI": {
                                 "_type": {"_name": "String"},
                                 "_value": "com.apple.iphone-8-2",
@@ -276,8 +321,14 @@ def test_deserialization_2():
                             },
                         },
                     },
-                    "schemeCommandName": {"_type": {"_name": "String"}, "_value": "Test"},
-                    "schemeTaskName": {"_type": {"_name": "String"}, "_value": "Action"},
+                    "schemeCommandName": {
+                        "_type": {"_name": "String"},
+                        "_value": "Test",
+                    },
+                    "schemeTaskName": {
+                        "_type": {"_name": "String"},
+                        "_value": "Action",
+                    },
                     "startedTime": {
                         "_type": {"_name": "Date"},
                         "_value": "2020-11-28T15:49:41.629+0000",
@@ -306,7 +357,10 @@ def test_deserialization_2():
                                 "_value": "/test/file/path",
                             },
                         },
-                        "issueType": {"_type": {"_name": "String"}, "_value": "Uncategorized"},
+                        "issueType": {
+                            "_type": {"_name": "String"},
+                            "_value": "Uncategorized",
+                        },
                         "message": {
                             "_type": {"_name": "String"},
                             "_value": "test failed",
@@ -331,7 +385,10 @@ def test_deserialization_2():
             },
             "targetType": {
                 "_type": {"_name": "TypeDefinition"},
-                "name": {"_type": {"_name": "String"}, "_value": "ActionsInvocationMetadata"},
+                "name": {
+                    "_type": {"_name": "String"},
+                    "_value": "ActionsInvocationMetadata",
+                },
             },
         },
         "metrics": {
@@ -432,7 +489,8 @@ def test_deserialization_2():
     assert isinstance(result.actions[0].runDestination, xcresult.ActionRunDestinationRecord)
     assert result.actions[0].runDestination.displayName == "iPhone 8"
     assert isinstance(
-        result.actions[0].runDestination.localComputerRecord, xcresult.ActionDeviceRecord
+        result.actions[0].runDestination.localComputerRecord,
+        xcresult.ActionDeviceRecord,
     )
     assert result.actions[0].runDestination.localComputerRecord.busSpeedInMHz == 400
     assert result.actions[0].runDestination.localComputerRecord.cpuCount == 1
