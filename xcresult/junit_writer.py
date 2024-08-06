@@ -154,5 +154,7 @@ class JunitWriter:
 
         tree = ET.ElementTree(root)
 
+        ET.indent(tree, space="    ", level=0)
+
         with open(path, "wb") as file:
             tree.write(file, encoding="utf-8", xml_declaration=True, short_empty_elements=False)
