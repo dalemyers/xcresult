@@ -46,9 +46,7 @@ class Xcresults:
             assert self._actions_invocation_record is not None
         return self._actions_invocation_record
 
-    def export_attachment(
-        self, identifier: str, type_identifier: str, output_path: str
-    ) -> None:
+    def export_attachment(self, identifier: str, type_identifier: str, output_path: str) -> None:
         """Get an attachment from an xcresult bundle.
 
         :param path: The path of the xcresult bundle
@@ -96,15 +94,11 @@ class Xcresults:
                     raise MissingPropertyException("No testable summaries found")
 
                 for testable_summary in summary.testableSummaries:
-                    logging.info(
-                        f"\t\t\tExporting testable summary: {testable_summary.name}"
-                    )
+                    logging.info(f"\t\t\tExporting testable summary: {testable_summary.name}")
 
                     if not testable_summary.tests:
                         raise MissingPropertyException("No tests found")
 
                     for test in testable_summary.tests:
                         logging.info(f"\t\t\t\tExporting test: {test.identifier}")
-                        export_action_test_summary_group(
-                            self.path, test, output_path, 5
-                        )
+                        export_action_test_summary_group(self.path, test, output_path, 5)
