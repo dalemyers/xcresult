@@ -160,6 +160,7 @@ def _export(path: str, identifier: str, object_type: str, output_path: str):
         object_type,
         "--output-path",
         output_path,
+        "--legacy",
     ]
 
     subprocess.run(
