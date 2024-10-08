@@ -64,9 +64,6 @@ class XcresultObject:
 # Defined Type: Bool -> bool
 
 
-# Defined Type: Data -> bytes
-
-
 # Defined Type: Date -> datetime.datetime
 
 
@@ -101,9 +98,6 @@ class XcresultObject:
 
 
 # Defined Type: UInt8 -> int
-
-
-# Defined Type: URL -> str
 
 
 # Defined Type: Array -> Array
@@ -193,44 +187,6 @@ class ActivityLogAnalyzerStep(XcresultObject):
     def _members(self) -> tuple:
         properties = [
             self.parentIndex,
-        ]
-        return tuple(properties + list(super()._members()))
-
-    def __eq__(self, other: Any) -> bool:
-        if not isinstance(other, self.__class__):
-            return False
-
-        # pylint: disable=protected-access
-        return self._members() == other._members()
-        # pylint: enable=protected-access
-
-    def __hash__(self) -> int:
-        return xchash(self)
-
-
-class ActivityLogSectionAttachment(XcresultObject):
-    """Generated from xcresulttool format description.
-
-    - ActivityLogSectionAttachment
-      * Kind: object
-      * Properties:
-        + identifier: String
-        + majorVersion: UInt8
-        + minorVersion: UInt8
-        + data: Data
-    """
-
-    identifier: str
-    majorVersion: int
-    minorVersion: int
-    data: bytes
-
-    def _members(self) -> tuple:
-        properties = [
-            self.identifier,
-            self.majorVersion,
-            self.minorVersion,
-            self.data,
         ]
         return tuple(properties + list(super()._members()))
 
@@ -466,38 +422,6 @@ class SortedKeyValueArrayPair(XcresultObject):
         properties = [
             self.key,
             self.value,
-        ]
-        return tuple(properties + list(super()._members()))
-
-    def __eq__(self, other: Any) -> bool:
-        if not isinstance(other, self.__class__):
-            return False
-
-        # pylint: disable=protected-access
-        return self._members() == other._members()
-        # pylint: enable=protected-access
-
-    def __hash__(self) -> int:
-        return xchash(self)
-
-
-class TestDocumentation(XcresultObject):
-    """Generated from xcresulttool format description.
-
-    - TestDocumentation
-      * Kind: object
-      * Properties:
-        + content: String
-        + format: String
-    """
-
-    content: str
-    format: str
-
-    def _members(self) -> tuple:
-        properties = [
-            self.content,
-            self.format,
         ]
         return tuple(properties + list(super()._members()))
 
@@ -1082,44 +1006,6 @@ class IssueSummary(XcresultObject):
         return xchash(self)
 
 
-class IssueTrackingMetadata(XcresultObject):
-    """Generated from xcresulttool format description.
-
-    - IssueTrackingMetadata
-      * Kind: object
-      * Properties:
-        + identifier: String
-        + url: URL?
-        + comment: String?
-        + summary: String
-    """
-
-    identifier: str
-    url: str | None
-    comment: str | None
-    summary: str
-
-    def _members(self) -> tuple:
-        properties = [
-            self.identifier,
-            self.url,
-            self.comment,
-            self.summary,
-        ]
-        return tuple(properties + list(super()._members()))
-
-    def __eq__(self, other: Any) -> bool:
-        if not isinstance(other, self.__class__):
-            return False
-
-        # pylint: disable=protected-access
-        return self._members() == other._members()
-        # pylint: enable=protected-access
-
-    def __hash__(self) -> int:
-        return xchash(self)
-
-
 class Reference(XcresultObject):
     """Generated from xcresulttool format description.
 
@@ -1245,126 +1131,6 @@ class SourceCodeLocation(XcresultObject):
         properties = [
             self.filePath,
             self.lineNumber,
-        ]
-        return tuple(properties + list(super()._members()))
-
-    def __eq__(self, other: Any) -> bool:
-        if not isinstance(other, self.__class__):
-            return False
-
-        # pylint: disable=protected-access
-        return self._members() == other._members()
-        # pylint: enable=protected-access
-
-    def __hash__(self) -> int:
-        return xchash(self)
-
-
-class TestParameter(XcresultObject):
-    """Generated from xcresulttool format description.
-
-    - TestParameter
-      * Kind: object
-      * Properties:
-        + label: String
-        + name: String?
-        + typeName: String?
-        + fullyQualifiedTypeName: String?
-    """
-
-    label: str
-    name: str | None
-    typeName: str | None
-    fullyQualifiedTypeName: str | None
-
-    def _members(self) -> tuple:
-        properties = [
-            self.label,
-            self.name,
-            self.typeName,
-            self.fullyQualifiedTypeName,
-        ]
-        return tuple(properties + list(super()._members()))
-
-    def __eq__(self, other: Any) -> bool:
-        if not isinstance(other, self.__class__):
-            return False
-
-        # pylint: disable=protected-access
-        return self._members() == other._members()
-        # pylint: enable=protected-access
-
-    def __hash__(self) -> int:
-        return xchash(self)
-
-
-class TestTag(XcresultObject):
-    """Generated from xcresulttool format description.
-
-    - TestTag
-      * Kind: object
-      * Properties:
-        + identifier: String
-        + name: String
-        + anchors: [String]
-    """
-
-    identifier: str
-    name: str
-    anchors: list[str]
-
-    def _members(self) -> tuple:
-        properties = [
-            self.identifier,
-            self.name,
-            self.anchors,
-        ]
-        return tuple(properties + list(super()._members()))
-
-    def __eq__(self, other: Any) -> bool:
-        if not isinstance(other, self.__class__):
-            return False
-
-        # pylint: disable=protected-access
-        return self._members() == other._members()
-        # pylint: enable=protected-access
-
-    def __hash__(self) -> int:
-        return xchash(self)
-
-
-class TestValue(XcresultObject):
-    """Generated from xcresulttool format description.
-
-    - TestValue
-      * Kind: object
-      * Properties:
-        + description: String
-        + debugDescription: String?
-        + typeName: String?
-        + fullyQualifiedTypeName: String?
-        + label: String?
-        + isCollection: Bool
-        + children: TestValue?
-    """
-
-    description: str
-    debugDescription: str | None
-    typeName: str | None
-    fullyQualifiedTypeName: str | None
-    label: str | None
-    isCollection: bool
-    children: Optional["TestValue"]
-
-    def _members(self) -> tuple:
-        properties = [
-            self.description,
-            self.debugDescription,
-            self.typeName,
-            self.fullyQualifiedTypeName,
-            self.label,
-            self.isCollection,
-            self.children,
         ]
         return tuple(properties + list(super()._members()))
 
@@ -1733,50 +1499,6 @@ class SourceCodeSymbolInfo(XcresultObject):
         return xchash(self)
 
 
-class TestArgument(XcresultObject):
-    """Generated from xcresulttool format description.
-
-    - TestArgument
-      * Kind: object
-      * Properties:
-        + parameter: TestParameter?
-        + identifier: String?
-        + description: String
-        + debugDescription: String?
-        + typeName: String?
-        + value: TestValue
-    """
-
-    parameter: TestParameter | None
-    identifier: str | None
-    description: str
-    debugDescription: str | None
-    typeName: str | None
-    value: TestValue
-
-    def _members(self) -> tuple:
-        properties = [
-            self.parameter,
-            self.identifier,
-            self.description,
-            self.debugDescription,
-            self.typeName,
-            self.value,
-        ]
-        return tuple(properties + list(super()._members()))
-
-    def __eq__(self, other: Any) -> bool:
-        if not isinstance(other, self.__class__):
-            return False
-
-        # pylint: disable=protected-access
-        return self._members() == other._members()
-        # pylint: enable=protected-access
-
-    def __hash__(self) -> int:
-        return xchash(self)
-
-
 class TestAssociatedError(XcresultObject):
     """Generated from xcresulttool format description.
 
@@ -1797,41 +1519,6 @@ class TestAssociatedError(XcresultObject):
             self.domain,
             self.code,
             self.userInfo,
-        ]
-        return tuple(properties + list(super()._members()))
-
-    def __eq__(self, other: Any) -> bool:
-        if not isinstance(other, self.__class__):
-            return False
-
-        # pylint: disable=protected-access
-        return self._members() == other._members()
-        # pylint: enable=protected-access
-
-    def __hash__(self) -> int:
-        return xchash(self)
-
-
-class TestExpression(XcresultObject):
-    """Generated from xcresulttool format description.
-
-    - TestExpression
-      * Kind: object
-      * Properties:
-        + sourceCode: String
-        + value: TestValue?
-        + subexpressions: [TestExpression]
-    """
-
-    sourceCode: str
-    value: TestValue | None
-    subexpressions: list["TestExpression"]
-
-    def _members(self) -> tuple:
-        properties = [
-            self.sourceCode,
-            self.value,
-            self.subexpressions,
         ]
         return tuple(properties + list(super()._members()))
 
@@ -2053,20 +1740,10 @@ class ActionTestSummaryGroup(ActionTestSummaryIdentifiableObject):
       * Properties:
         + duration: Double
         + subtests: [ActionTestSummaryIdentifiableObject]
-        + skipNoticeSummary: ActionTestNoticeSummary?
-        + summary: String?
-        + documentation: [TestDocumentation]
-        + trackedIssues: [IssueTrackingMetadata]
-        + tags: [TestTag]
     """
 
     duration: float
     subtests: list[ActionTestSummaryIdentifiableObject]
-    skipNoticeSummary: ActionTestNoticeSummary | None
-    summary: str | None
-    documentation: list[TestDocumentation]
-    trackedIssues: list[IssueTrackingMetadata]
-    tags: list[TestTag]
 
     def all_subtests(self) -> list:
         """Get all subtests.
@@ -2088,11 +1765,6 @@ class ActionTestSummaryGroup(ActionTestSummaryIdentifiableObject):
         properties = [
             self.duration,
             self.subtests,
-            self.skipNoticeSummary,
-            self.summary,
-            self.documentation,
-            self.trackedIssues,
-            self.tags,
         ]
         return tuple(properties + list(super()._members()))
 
@@ -2178,7 +1850,6 @@ class ActivityLogSection(XcresultObject):
         + location: DocumentLocation?
         + subsections: [ActivityLogSection]
         + messages: [ActivityLogMessage]
-        + attachments: [ActivityLogSectionAttachment]
     """
 
     domainType: str
@@ -2189,7 +1860,6 @@ class ActivityLogSection(XcresultObject):
     location: DocumentLocation | None
     subsections: list["ActivityLogSection"]
     messages: list[ActivityLogMessage]
-    attachments: list[ActivityLogSectionAttachment]
 
     def _members(self) -> tuple:
         properties = [
@@ -2201,7 +1871,6 @@ class ActivityLogSection(XcresultObject):
             self.location,
             self.subsections,
             self.messages,
-            self.attachments,
         ]
         return tuple(properties + list(super()._members()))
 
@@ -2601,7 +2270,6 @@ class ActionTestFailureSummary(XcresultObject):
         + sourceCodeContext: SourceCodeContext?
         + timestamp: Date?
         + isTopLevelFailure: Bool
-        + expression: TestExpression?
     """
 
     message: str | None
@@ -2616,7 +2284,6 @@ class ActionTestFailureSummary(XcresultObject):
     sourceCodeContext: SourceCodeContext | None
     timestamp: datetime.datetime | None
     isTopLevelFailure: bool
-    expression: TestExpression | None
 
     def _members(self) -> tuple:
         properties = [
@@ -2632,7 +2299,6 @@ class ActionTestFailureSummary(XcresultObject):
             self.sourceCodeContext,
             self.timestamp,
             self.isTopLevelFailure,
-            self.expression,
         ]
         return tuple(properties + list(super()._members()))
 
@@ -2928,13 +2594,8 @@ class ActionTestSummary(ActionTestSummaryIdentifiableObject):
         + skipNoticeSummary: ActionTestNoticeSummary?
         + activitySummaries: [ActionTestActivitySummary]
         + repetitionPolicySummary: ActionTestRepetitionPolicySummary?
-        + arguments: [TestArgument]
         + configuration: ActionTestConfiguration?
         + warningSummaries: [ActionTestIssueSummary]
-        + summary: String?
-        + documentation: [TestDocumentation]
-        + trackedIssues: [IssueTrackingMetadata]
-        + tags: [TestTag]
     """
 
     testStatus: str
@@ -2945,13 +2606,8 @@ class ActionTestSummary(ActionTestSummaryIdentifiableObject):
     skipNoticeSummary: ActionTestNoticeSummary | None
     activitySummaries: list[ActionTestActivitySummary]
     repetitionPolicySummary: ActionTestRepetitionPolicySummary | None
-    arguments: list[TestArgument]
     configuration: ActionTestConfiguration | None
     warningSummaries: list[ActionTestIssueSummary]
-    summary: str | None
-    documentation: list[TestDocumentation]
-    trackedIssues: list[IssueTrackingMetadata]
-    tags: list[TestTag]
 
     def _members(self) -> tuple:
         properties = [
@@ -2963,13 +2619,8 @@ class ActionTestSummary(ActionTestSummaryIdentifiableObject):
             self.skipNoticeSummary,
             self.activitySummaries,
             self.repetitionPolicySummary,
-            self.arguments,
             self.configuration,
             self.warningSummaries,
-            self.summary,
-            self.documentation,
-            self.trackedIssues,
-            self.tags,
         ]
         return tuple(properties + list(super()._members()))
 
