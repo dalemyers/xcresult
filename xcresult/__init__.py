@@ -8,6 +8,6 @@ from xcresult.exceptions import (
     XcresultException,
 )
 from xcresult.model import *
-from xcresult.xcresult import Xcresults
+from xcresult.xcresults import Xcresults
 
 # pylint: enable=unused-import
