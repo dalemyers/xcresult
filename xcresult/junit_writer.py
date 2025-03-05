@@ -50,10 +50,14 @@ class JunitWriter:
 
         if test.summaryRef is None:
             failure_element = ET.SubElement(test_case, "failure")
-            failure_element.set("message", "Unknown failure due to missing summary ref.")
+            failure_element.set(
+                "message", "Unknown failure due to missing summary ref."
+            )
             return 1, 1, 0
 
-        base_failure = cast(ActionTestSummary, deserialize(self.results.get(test.summaryRef.id)))
+        base_failure = cast(
+            ActionTestSummary, deserialize(self.results.get(test.summaryRef.id))
+        )
 
         for failure in base_failure.failureSummaries:
             if (
@@ -78,37 +82,36 @@ class JunitWriter:
         configuration_name: str,
     ) -> tuple[int, int, int]:
         """Generate the test suite."""
-        suite = ET.SubElement(root, "testsuite")
-        suite.set("name", summary.name or "Unknown Suite")
 
-        if len(summary.tests) != 1:
-            raise XcresultException(
-                "Only one test per testable summary is supported. Please file a bug with your xcresult if you encounter this issue."
-            )
+        for test in summary.tests:
+            suite = ET.SubElement(root, "testsuite")
+            suite.set("name", f"{summary.name}/{test.identifier}" or "Unknown Suite")
 
-        # We get an identifiable, but that "protocol" isn't guaranteed to have a duration
-        suite.set("time", str(getattr(summary.tests[0], "duration", 0)))
+            # We get an identifiable, but that "protocol" isn't guaranteed to have a duration
+            suite.set("time", str(getattr(test, "duration", 0)))
 
-        properties = ET.SubElement(suite, "properties")
-        configuration = ET.SubElement(properties, "property")
-        configuration.set("name", "Configuration")
-        configuration.set("value", configuration_name)
+            properties = ET.SubElement(suite, "properties")
+            configuration = ET.SubElement(properties, "property")
+            configuration.set("name", "Configuration")
+            configuration.set("value", configuration_name)
 
-        total_tests = 0
-        total_failures = 0
-        total_skipped = 0
+            all_tests = summary.all_tests()
 
-        all_tests = summary.all_tests()
+            total_tests = 0
+            total_failures = 0
+            total_skipped = 0
 
-        for test in all_tests:
-            test_count, failure_count, skipped_count = self.generate_test_case(suite, test)
-            total_tests += test_count
-            total_failures += failure_count
-            total_skipped += skipped_count
+            for test in all_tests:
+                test_count, failure_count, skipped_count = self.generate_test_case(
+                    suite, test
+                )
+                total_tests += test_count
+                total_failures += failure_count
+                total_skipped += skipped_count
 
-        suite.set("tests", str(total_tests))
-        suite.set("failures", str(total_failures))
-        suite.set("skipped", str(total_skipped))
+            suite.set("tests", str(total_tests))
+            suite.set("failures", str(total_failures))
+            suite.set("skipped", str(total_skipped))
 
         return total_tests, total_failures, total_skipped
 
@@ -142,7 +145,9 @@ class JunitWriter:
             for run_summary in summary.summaries:
                 for testable_summary in run_summary.testableSummaries:
                     test_count, failure_count, skipped_count = self.generate_test_suite(
-                        root, testable_summary, run_summary.name or "Unknown Configuration"
+                        root,
+                        testable_summary,
+                        run_summary.name or "Unknown Configuration",
                     )
                     total_tests += test_count
                     total_failures += failure_count
@@ -157,4 +162,6 @@ class JunitWriter:
         ET.indent(tree, space="    ", level=0)
 
         with open(path, "wb") as file:
-            tree.write(file, encoding="utf-8", xml_declaration=True, short_empty_elements=False)
+            tree.write(
+                file, encoding="utf-8", xml_declaration=True, short_empty_elements=False
+            )
