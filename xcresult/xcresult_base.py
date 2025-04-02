@@ -32,3 +32,10 @@ class XcresultsBase(abc.ABC):
         :param id: The ID of the item to get.
         """
         raise NotImplementedError()
+
+    def export_test_attachments(self, output_path: str):
+        """Export test attachments from the xcresult bundle.
+
+        :param output_path: The path to export the attachments to.
+        """
+        raise NotImplementedError()

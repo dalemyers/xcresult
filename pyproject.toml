@@ -30,6 +30,7 @@ xcresult = 'xcresult:command_line.run'
 
 [tool.poetry.dependencies]
 python = "^3.10"
+lxml = "^5.0.0"
 
 [tool.poetry.dev-dependencies]
 black = "=25.1.0"
@@ -37,6 +38,7 @@ mypy = "=1.15.0"
 pylint = "=3.3.6"
 pytest = "=8.3.2"
 pytest-cov = "=5.0.0"
+lxml-stubs = "^0.5.1"
 
 [build-system]
 requires = ["poetry>=1.0"]

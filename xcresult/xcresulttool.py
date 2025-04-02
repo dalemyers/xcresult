@@ -278,11 +278,19 @@ def export_action_test_summary_group(
                 else:
                     file_name = attachment.filename
 
+                output_file_path = os.path.join(output_path, relative_path, file_name)
+
+                while os.path.exists(output_file_path):
+                    suffix = str(uuid.uuid4()).split("-", maxsplit=1)[0]
+                    file_name, file_ext = os.path.splitext(file_name)
+                    new_file_name = f"{file_name}-{suffix}{file_ext}"
+                    output_file_path = os.path.join(output_path, relative_path, new_file_name)
+
                 export_attachment(
                     results_path,
                     identifier,
                     "file",
-                    os.path.join(output_path, "summary", relative_path, file_name),
+                    output_file_path,
                 )
 
     if data.failureSummaries:
@@ -300,11 +308,19 @@ def export_action_test_summary_group(
                 else:
                     file_name = attachment.filename
 
+                output_file_path = os.path.join(output_path, relative_path, file_name)
+
+                while os.path.exists(output_file_path):
+                    suffix = str(uuid.uuid4()).split("-", maxsplit=1)[0]
+                    file_name, file_ext = os.path.splitext(file_name)
+                    new_file_name = f"{file_name}-{suffix}{file_ext}"
+                    output_file_path = os.path.join(output_path, relative_path, new_file_name)
+
                 export_attachment(
                     results_path,
                     identifier,
                     "file",
-                    os.path.join(output_path, "failure", relative_path, file_name),
+                    output_file_path,
                 )
 
 

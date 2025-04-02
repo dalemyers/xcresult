@@ -1,7 +1,10 @@
 """Junit writer for writing out the results of tests."""
 
+# pylint: disable=c-extension-no-member
+
+import os
 from typing import cast
-import xml.etree.ElementTree as ET
+from lxml import etree as ET
 
 from xcresult.model import (
     ActionTestMetadata,
@@ -17,13 +20,22 @@ class JunitWriter:
     """Junit writer for writing out the results of tests."""
 
     results: XcresultsBase
+    junit_path: str
+    export_attachments_path: str | None
 
-    def __init__(self, results: XcresultsBase) -> None:
+    def __init__(
+        self,
+        results: XcresultsBase,
+        junit_path: str,
+        export_attachments_path: str | None = None,
+    ) -> None:
         self.results = results
+        self.junit_path = junit_path
+        self.export_attachments_path = export_attachments_path
 
     def generate_test_case(
         self,
-        suite: ET.Element,
+        suite: ET.Element,  # type: ignore
         test: ActionTestMetadata,
     ) -> tuple[int, int, int]:
         """Generate the XML for a test case.
@@ -68,11 +80,35 @@ class JunitWriter:
             failure_element = ET.SubElement(test_case, "failure")
             failure_element.set("message", f"{failure.message} ({line})")
 
+        if not self.export_attachments_path:
+            return 1, 1, 0
+
+        assert (
+            test.identifierURL is not None
+        ), f"Test identifier URL is None for test {test_case_identifier}. Unable to export attachments."
+
+        test_attachments_relative_path = test.identifierURL.replace("test://com.apple.xcode/", "")
+        test_attachments_path = os.path.join(
+            self.export_attachments_path, test_attachments_relative_path
+        )
+
+        cdata = []
+
+        for attachment_name in os.listdir(test_attachments_path):
+            attachment_path = os.path.join(test_attachments_path, attachment_name)
+            coverage_relative_path = os.path.relpath(
+                attachment_path, os.path.dirname(self.junit_path)
+            )
+            cdata.append(f"[[ATTACHMENT|{coverage_relative_path}]]")
+
+        system_out = ET.SubElement(test_case, "system-out")
+        system_out.text = ET.CDATA("\n" + "\n".join(cdata) + "\n")
+
         return 1, 1, 0
 
     def generate_test_suite(
         self,
-        root: ET.Element,
+        root: ET.Element,  # type: ignore
         summary: ActionTestableSummary,
         configuration_name: str,
     ) -> tuple[int, int, int]:
@@ -97,6 +133,9 @@ class JunitWriter:
             total_skipped = 0
 
             for test in all_tests:
+                if not isinstance(test, ActionTestMetadata):
+                    raise TypeError(f"Expected ActionTestMetadata, got {type(test)}")
+
                 test_count, failure_count, skipped_count = self.generate_test_case(suite, test)
                 total_tests += test_count
                 total_failures += failure_count
@@ -108,8 +147,11 @@ class JunitWriter:
 
         return total_tests, total_failures, total_skipped
 
-    def write(self, path: str) -> None:
+    def write(self) -> None:
         """Get the test results."""
+
+        if self.export_attachments_path:
+            self.results.export_test_attachments(self.export_attachments_path)
 
         root = ET.Element("testsuites")
 
@@ -154,5 +196,5 @@ class JunitWriter:
 
         ET.indent(tree, space="    ", level=0)
 
-        with open(path, "wb") as file:
-            tree.write(file, encoding="utf-8", xml_declaration=True, short_empty_elements=False)
+        with open(self.junit_path, "wb") as file:
+            tree.write(file, encoding="utf-8", xml_declaration=True)

@@ -2014,7 +2014,7 @@ class ActionTestMetadata(ActionTestSummaryIdentifiableObject):
     failureSummariesCount: int
     activitySummariesCount: int
 
-    def all_subtests(self) -> list:
+    def all_subtests(self) -> list[ActionTestSummaryIdentifiableObject]:
         """Get all subtests.
 
         :returns: All subtests - just self in this case
@@ -2068,7 +2068,7 @@ class ActionTestSummaryGroup(ActionTestSummaryIdentifiableObject):
     trackedIssues: list[IssueTrackingMetadata]
     tags: list[TestTag]
 
-    def all_subtests(self) -> list:
+    def all_subtests(self) -> list[ActionTestSummaryIdentifiableObject]:
         """Get all subtests.
 
         :returns: All subtests

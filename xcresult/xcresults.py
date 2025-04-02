@@ -97,6 +97,10 @@ class Xcresults(XcresultsBase):
                         logging.info(f"\t\t\t\tExporting test: {test.identifier}")
                         export_action_test_summary_group(self.path, test, output_path, 5)
 
-    def write_junit(self, path: str) -> None:
-        """Write the test results as a junit."""
-        JunitWriter(self).write(path)
+    def write_junit(self, path: str, export_attachments_path: str | None = None) -> None:
+        """Write the test results as a junit.
+
+        :param path: The path to write the junit to
+        :param export_attachments_path: The path to write the attachments to. If None, the attachments will not be exported.
+        """
+        JunitWriter(self, path, export_attachments_path).write()

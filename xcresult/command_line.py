@@ -42,7 +42,7 @@ def _handle_junit(args: argparse.Namespace) -> int:
 
     try:
         bundle = xcresult.Xcresults(args.bundle_path)
-        bundle.write_junit(args.output_path)
+        bundle.write_junit(args.output_path, args.export_attachments_path)
         # pylint: disable=broad-exception-caught
     except Exception as ex:
         # pylint: enable=broad-exception-caught
@@ -92,6 +92,13 @@ def _handle_arguments() -> int:
         help="Set the output path for the junit XML to be written to",
     )
 
+    junit_parser.add_argument(
+        "--export-attachments-path",
+        dest="export_attachments_path",
+        action="store",
+        help="Set the output path for the attachments to be written to",
+    )
+
     junit_parser.set_defaults(subcommand="junit")
 
     args = parser.parse_args()
@@ -120,4 +127,28 @@ def run() -> int:
 
 
 if __name__ == "__main__":
+    sys.argv = [
+        "",
+        "--bundle-path",
+        "/Users/dalemyers/Microsoft/OneDrive.iOS/build/DerivedData/staging_xcresult/Run.xcresult",
+        "junit",
+        "--output-path",
+        "/Users/dalemyers/Microsoft/OneDrive.iOS/build/DerivedData/staging_xcresult/Run.xml",
+        # "--export-attachments-path",
+        # "/Users/dalemyers/Microsoft/OneDrive.iOS/build/DerivedData/staging_xcresult/Attachments",
+    ]
+    import shutil
+
+    if os.path.exists(
+        "/Users/dalemyers/Microsoft/OneDrive.iOS/build/DerivedData/staging_xcresult/Run.xml"
+    ):
+        os.remove(
+            "/Users/dalemyers/Microsoft/OneDrive.iOS/build/DerivedData/staging_xcresult/Run.xml"
+        )
+    shutil.rmtree(
+        "/Users/dalemyers/Microsoft/OneDrive.iOS/build/DerivedData/staging_xcresult/Attachments"
+    )
+    os.makedirs(
+        "/Users/dalemyers/Microsoft/OneDrive.iOS/build/DerivedData/staging_xcresult/Attachments"
+    )
     sys.exit(_handle_arguments())
