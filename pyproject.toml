@@ -32,9 +32,9 @@ xcresult = 'xcresult:command_line.run'
 python = "^3.10"
 
 [tool.poetry.dev-dependencies]
-black = "=24.4.2"
-mypy = "=1.11.1"
-pylint = "=3.2.6"
+black = "=25.1.0"
+mypy = "=1.15.0"
+pylint = "=3.3.6"
 pytest = "=8.3.2"
 pytest-cov = "=5.0.0"
 

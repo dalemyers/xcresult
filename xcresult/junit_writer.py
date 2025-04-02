@@ -3,7 +3,6 @@
 from typing import cast
 import xml.etree.ElementTree as ET
 
-from xcresult.exceptions import XcresultException
 from xcresult.model import (
     ActionTestMetadata,
     ActionTestSummary,
@@ -50,14 +49,10 @@ class JunitWriter:
 
         if test.summaryRef is None:
             failure_element = ET.SubElement(test_case, "failure")
-            failure_element.set(
-                "message", "Unknown failure due to missing summary ref."
-            )
+            failure_element.set("message", "Unknown failure due to missing summary ref.")
             return 1, 1, 0
 
-        base_failure = cast(
-            ActionTestSummary, deserialize(self.results.get(test.summaryRef.id))
-        )
+        base_failure = cast(ActionTestSummary, deserialize(self.results.get(test.summaryRef.id)))
 
         for failure in base_failure.failureSummaries:
             if (
@@ -102,9 +97,7 @@ class JunitWriter:
             total_skipped = 0
 
             for test in all_tests:
-                test_count, failure_count, skipped_count = self.generate_test_case(
-                    suite, test
-                )
+                test_count, failure_count, skipped_count = self.generate_test_case(suite, test)
                 total_tests += test_count
                 total_failures += failure_count
                 total_skipped += skipped_count
@@ -162,6 +155,4 @@ class JunitWriter:
         ET.indent(tree, space="    ", level=0)
 
         with open(path, "wb") as file:
-            tree.write(
-                file, encoding="utf-8", xml_declaration=True, short_empty_elements=False
-            )
+            tree.write(file, encoding="utf-8", xml_declaration=True, short_empty_elements=False)
