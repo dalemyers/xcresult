@@ -22,16 +22,22 @@ class JunitWriter:
     results: XcresultsBase
     junit_path: str
     export_attachments_path: str | None
+    test_class_prefix: str | None
+    test_class_suffix: str | None
 
     def __init__(
         self,
         results: XcresultsBase,
         junit_path: str,
         export_attachments_path: str | None = None,
+        test_class_prefix: str | None = None,
+        test_class_suffix: str | None = None,
     ) -> None:
         self.results = results
         self.junit_path = junit_path
         self.export_attachments_path = export_attachments_path
+        self.test_class_prefix = test_class_prefix
+        self.test_class_suffix = test_class_suffix
 
     def generate_test_case(
         self,
@@ -48,7 +54,15 @@ class JunitWriter:
 
         test_case = ET.SubElement(suite, "testcase")
         test_case_identifier = test.identifier or "Unknown Test"
-        test_case.set("classname", test_case_identifier.split("/", maxsplit=1)[0])
+        test_case_identifier = test_case_identifier.split("/", maxsplit=1)[0]
+
+        if self.test_class_prefix:
+            test_case_identifier = f"{self.test_class_prefix}.{test_case_identifier}"
+
+        if self.test_class_suffix:
+            test_case_identifier = f"{test_case_identifier}.{self.test_class_suffix}"
+
+        test_case.set("classname", test_case_identifier)
         test_case.set("name", test.name or "Unknown Test")
         test_case.set("time", str(test.duration))
 
