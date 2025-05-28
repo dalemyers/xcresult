@@ -127,28 +127,4 @@ def run() -> int:
 
 
 if __name__ == "__main__":
-    sys.argv = [
-        "",
-        "--bundle-path",
-        "/Users/dalemyers/Microsoft/OneDrive.iOS/build/DerivedData/staging_xcresult/Run.xcresult",
-        "junit",
-        "--output-path",
-        "/Users/dalemyers/Microsoft/OneDrive.iOS/build/DerivedData/staging_xcresult/Run.xml",
-        # "--export-attachments-path",
-        # "/Users/dalemyers/Microsoft/OneDrive.iOS/build/DerivedData/staging_xcresult/Attachments",
-    ]
-    import shutil
-
-    if os.path.exists(
-        "/Users/dalemyers/Microsoft/OneDrive.iOS/build/DerivedData/staging_xcresult/Run.xml"
-    ):
-        os.remove(
-            "/Users/dalemyers/Microsoft/OneDrive.iOS/build/DerivedData/staging_xcresult/Run.xml"
-        )
-    shutil.rmtree(
-        "/Users/dalemyers/Microsoft/OneDrive.iOS/build/DerivedData/staging_xcresult/Attachments"
-    )
-    os.makedirs(
-        "/Users/dalemyers/Microsoft/OneDrive.iOS/build/DerivedData/staging_xcresult/Attachments"
-    )
     sys.exit(_handle_arguments())
