@@ -195,6 +195,7 @@ def _handle_arguments() -> int:
         type=IssueType,
         nargs="+",
         choices=list(IssueType),
+        metavar=str({i.value for i in list(IssueType)}),
         help="Set the issue types to report. Will return all issues if not specified.",
     )
 
