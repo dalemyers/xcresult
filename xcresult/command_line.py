@@ -211,6 +211,14 @@ def _handle_arguments() -> int:
         parser.print_help()
         return 1
 
+    if not os.path.exists(args.bundle_path):
+        print("Bundle path does not exist")
+        return 1
+
+    if not os.path.isdir(args.bundle_path):
+        print("Bundle path is not a valid bundle")
+        return 1
+
     if args.subcommand == "export":
         return _handle_export(args)
 
