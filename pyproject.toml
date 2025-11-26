@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "xcresult"
-version = "16.3.2"
+version = "26.0.0"
 description = "An xcresult parser."
 
 license = "MIT"
