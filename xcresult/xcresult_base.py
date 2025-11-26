@@ -1,6 +1,7 @@
 """A base class for dealing with xcresults."""
 
 import abc
+import os
 from typing import Any
 
 from xcresult.model import ActionsInvocationRecord
@@ -13,7 +14,10 @@ class XcresultsBase(abc.ABC):
     _actions_invocation_record: ActionsInvocationRecord | None
 
     def __init__(self, path: str) -> None:
-        self.path = path
+        if path.startswith("/"):
+            self.path = path
+        else:
+            self.path = os.path.join(os.getcwd(), path)
         self._actions_invocation_record = None
 
     @property
