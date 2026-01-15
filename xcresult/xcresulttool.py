@@ -34,9 +34,9 @@ def deserialize(data: dict[str, Any]) -> Any:
     del data["_type"]
 
     if type_name == "Array":
-        output = []
+        output: list[Any] = []
         for value in data["_values"]:
-            output.append(deserialize(value))
+            output.append(deserialize(value))  # type: ignore[arg-type]
         return output
 
     if "_value" in data:
@@ -139,7 +139,7 @@ def get(path: str, identifier: str | None = None) -> dict[str, Any]:
     return cast(dict[str, Any], json.loads(output))
 
 
-def _export(path: str, identifier: str, object_type: str, output_path: str):
+def _export(path: str, identifier: str, object_type: str, output_path: str) -> None:
     """Export a file/directory from the xcresult bundle.
 
     :param path: The path to the xcresult bundle
@@ -172,7 +172,7 @@ def _export(path: str, identifier: str, object_type: str, output_path: str):
     )
 
 
-def get_actions_invocation_record(path) -> ActionsInvocationRecord:
+def get_actions_invocation_record(path: str) -> ActionsInvocationRecord:
     """Get the base xcresult info.
 
     :param path: The path to the xcresult bundle
@@ -207,7 +207,7 @@ def get_action_test_summary(path: str, identifier: str) -> ActionTestSummary:
     return cast(ActionTestSummary, deserialize(object_data))
 
 
-def export_attachment(path: str, identifier: str, type_identifier: str, output_path) -> None:
+def export_attachment(path: str, identifier: str, type_identifier: str, output_path: str) -> None:
     """Get an attachment from an xcresult bundle.
 
     The name will be the attachment name generated if available.
@@ -265,7 +265,7 @@ def export_action_test_summary_group(
     if data.activitySummaries:
         for activity_summary in data.activitySummaries:
             logging.info(f"{log_prefix}\tExporting activity summary: {activity_summary.title}")
-            if activity_summary.attachments is None:
+            if not activity_summary.attachments:
                 continue
             for attachment in activity_summary.attachments:
                 logging.info(f"{log_prefix}\t\tExporting attachment: {attachment.name}")
@@ -295,7 +295,7 @@ def export_action_test_summary_group(
 
     if data.failureSummaries:
         for summary in data.failureSummaries:
-            if summary.attachments is None:
+            if not summary.attachments:
                 continue
 
             for attachment in summary.attachments:

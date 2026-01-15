@@ -37,7 +37,7 @@ class XcresultsBase(abc.ABC):
         """
         raise NotImplementedError()
 
-    def export_test_attachments(self, output_path: str):
+    def export_test_attachments(self, output_path: str) -> None:
         """Export test attachments from the xcresult bundle.
 
         :param output_path: The path to export the attachments to.

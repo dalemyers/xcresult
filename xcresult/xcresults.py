@@ -57,7 +57,7 @@ class Xcresults(XcresultsBase):
         """
         return get(self.path, identifier)
 
-    def export_test_attachments(self, output_path: str):
+    def export_test_attachments(self, output_path: str) -> None:
         """Export all test attachments."""
         if not self.actions_invocation_record:
             raise MissingPropertyException("No actions invocation record found")

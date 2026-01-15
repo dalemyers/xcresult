@@ -10,10 +10,7 @@ def pretty_message(self, path_prefix: str | None) -> str:
 
     documentLocationInCreatingWorkspace = self.documentLocationInCreatingWorkspace
 
-    if (
-        documentLocationInCreatingWorkspace is None
-        or documentLocationInCreatingWorkspace.path is None
-    ):
+    if documentLocationInCreatingWorkspace is None or not documentLocationInCreatingWorkspace.path:
         return output
 
     relative_path = documentLocationInCreatingWorkspace.path

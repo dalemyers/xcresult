@@ -52,7 +52,7 @@ class JunitWriter:
         :returns: A tuple of the number of tests, failures and skipped tests
         """
 
-        test_case = ET.SubElement(suite, "testcase")
+        test_case = ET.SubElement(suite, "testcase")  # type: ignore[arg-type]
         test_case_identifier = test.identifier or "Unknown Test"
         test_case_identifier = test_case_identifier.split("/", maxsplit=1)[0]
 
@@ -113,10 +113,10 @@ class JunitWriter:
             coverage_relative_path = os.path.relpath(
                 attachment_path, os.path.dirname(self.junit_path)
             )
-            cdata.append(f"[[ATTACHMENT|{coverage_relative_path}]]")
+            cdata.append(f"[[ATTACHMENT|{coverage_relative_path}]]")  # type: ignore[arg-type]
 
         system_out = ET.SubElement(test_case, "system-out")
-        system_out.text = ET.CDATA("\n" + "\n".join(cdata) + "\n")
+        system_out.text = ET.CDATA("\n" + "\n".join(cdata) + "\n")  # type: ignore[arg-type]
 
         return 1, 1, 0
 
@@ -128,8 +128,12 @@ class JunitWriter:
     ) -> tuple[int, int, int]:
         """Generate the test suite."""
 
+        total_tests = 0
+        total_failures = 0
+        total_skipped = 0
+
         for test in summary.tests:
-            suite = ET.SubElement(root, "testsuite")
+            suite = ET.SubElement(root, "testsuite")  # type: ignore[arg-type]
             suite.set("name", f"{summary.name}/{test.identifier}" or "Unknown Suite")
 
             # We get an identifiable, but that "protocol" isn't guaranteed to have a duration
@@ -142,15 +146,11 @@ class JunitWriter:
 
             all_tests = summary.all_tests()
 
-            total_tests = 0
-            total_failures = 0
-            total_skipped = 0
-
             for test in all_tests:
                 if not isinstance(test, ActionTestMetadata):
                     raise TypeError(f"Expected ActionTestMetadata, got {type(test)}")
 
-                test_count, failure_count, skipped_count = self.generate_test_case(suite, test)
+                test_count, failure_count, skipped_count = self.generate_test_case(suite, test)  # type: ignore[arg-type]
                 total_tests += test_count
                 total_failures += failure_count
                 total_skipped += skipped_count
@@ -169,11 +169,7 @@ class JunitWriter:
 
         root = ET.Element("testsuites")
 
-        action_results = [
-            r.actionResult
-            for r in self.results.actions_invocation_record.actions
-            if r.actionResult is not None
-        ]
+        action_results = [r.actionResult for r in self.results.actions_invocation_record.actions]
 
         test_refs = [ar.testsRef for ar in action_results if ar.testsRef is not None]
         test_identifiers = [tr.id for tr in test_refs]
@@ -193,7 +189,7 @@ class JunitWriter:
         for summary in summaries:
             for run_summary in summary.summaries:
                 for testable_summary in run_summary.testableSummaries:
-                    test_count, failure_count, skipped_count = self.generate_test_suite(
+                    test_count, failure_count, skipped_count = self.generate_test_suite(  # type: ignore[arg-type]
                         root,
                         testable_summary,
                         run_summary.name or "Unknown Configuration",

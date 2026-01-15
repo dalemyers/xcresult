@@ -1,4 +1,4 @@
-def all_tests(self) -> list:
+def all_tests(self) -> list[ActionTestSummaryIdentifiableObject]:
     """Get all subtests.
 
     :returns: All subtests

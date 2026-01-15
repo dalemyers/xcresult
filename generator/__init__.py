@@ -143,7 +143,7 @@ class Definition:
 
     def _generate_definition_header(self) -> tuple[list[str], bool]:
         """Convert this definition to Python code."""
-        output = []
+        output: list[str] = []
 
         if self.kind != "object":
             output.append(
@@ -152,7 +152,10 @@ class Definition:
             return output, False
 
         class_line = f"class {self.name}"
-        if self.supertype is not None and self.name != "XcresultObject":
+        if (
+            self.supertype is not None  # pyright: ignore[reportUnnecessaryComparison]
+            and self.name != "XcresultObject"
+        ):
             class_line += f"({self.supertype})"
         class_line += ":"
         output.append(class_line)
@@ -161,7 +164,7 @@ class Definition:
 
     def _generate_doc_comment(self) -> list[str]:
         """Generate the doc comment for this definition."""
-        output = []
+        output: list[str] = []
 
         if self.original:
             output.append('    """Generated from xcresulttool format description.')
@@ -181,7 +184,7 @@ class Definition:
         return output
 
     def _add_additional_methods(self) -> list[str]:
-        output = []
+        output: list[str] = []
 
         additional_methods_path = os.path.join(
             os.path.dirname(os.path.abspath(__file__)),
@@ -203,14 +206,14 @@ class Definition:
         return output
 
     def _add_dunder_methods(self) -> list[str]:
-        output = [""]
+        output: list[str] = [""]
 
         if len(self.properties) > 0 or self.name == "XcresultObject":
-            output.append("    def _members(self) -> tuple:")
+            output.append("    def _members(self) -> tuple[Any, ...]:")
             if self.name == "XcresultObject":
                 output.append("        return ()")
             else:
-                output.append("        properties = [")
+                output.append("        properties: list[Any] = [")
                 for name, _ in self.properties:
                     output.append(f"            self.{name},")
                 output.append("        ]")
@@ -238,7 +241,7 @@ class Definition:
 
         :returns: The Python code
         """
-        output = []
+        output: list[str] = []
 
         next_output, should_continue = self._generate_definition_header()
         output.extend(next_output)
@@ -267,7 +270,7 @@ class Definition:
         name = name_line[2:].strip()
         kind = None
         supertype = None
-        properties = []
+        properties: list[tuple[str, str]] = []
         for line in lines:
             line = line.strip()
             components = line[2:].split(":")
@@ -341,15 +344,15 @@ def order_definitions(definitions: list[Definition]) -> list[Definition]:
 
     :returns: The ordered definitions
     """
-    all_output = []
+    all_output: list[Definition] = []
     definition_dict = {definition.name: definition for definition in definitions}
     dependency_types = {
         definition.name: set(definition.dependency_types()) for definition in definitions
     }
 
     while len(dependency_types) > 0:
-        keys_to_delete = []
-        output = []
+        keys_to_delete: list[str] = []
+        output: list[Definition] = []
 
         for key, values in dependency_types.items():
             if len(values) > 1:
@@ -410,15 +413,17 @@ def generate(output_path: str):
 
         output_file.write("def xchash(item: Any) -> int:\n")
         output_file.write('    """Generate a hash for an object."""\n')
-        output_file.write("    all_hashes = []\n")
+        output_file.write("    all_hashes: list[int] = []\n")
         output_file.write("\n")
         output_file.write("    if isinstance(item, list):\n")
-        output_file.write("        for sub_item in item:\n")
+        output_file.write("        for sub_item in item:  # type: ignore[var-annotated]\n")
         output_file.write("            all_hashes.append(xchash(sub_item))\n")
         output_file.write("        return hash(tuple(all_hashes))\n")
         output_file.write("\n")
         output_file.write("    if isinstance(item, dict):\n")
-        output_file.write("        for key, value in item.items():\n")
+        output_file.write(
+            "        for key, value in item.items():  # type: ignore[var-annotated]\n"
+        )
         output_file.write("            all_hashes.append(xchash(key))\n")
         output_file.write("            all_hashes.append(xchash(value))\n")
         output_file.write("        return hash(tuple(all_hashes))\n")
@@ -443,19 +448,21 @@ def generate(output_path: str):
         output_file.write("\n")
 
         output_file.write("_CURRENT_MODULE = sys.modules[__name__]\n")
-        output_file.write("_MODEL_NAMES = dir(_CURRENT_MODULE)\n")
-        output_file.write('_MODEL_NAMES = [m for m in _MODEL_NAMES if not m.startswith("__")]\n')
+        output_file.write("_model_names: list[str] = dir(_CURRENT_MODULE)\n")
+        output_file.write('_model_names = [m for m in _model_names if not m.startswith("__")]\n')
         output_file.write(
-            "_RESOLVED_MODELS = [getattr(_CURRENT_MODULE, m) for m in _MODEL_NAMES]\n"
+            "_resolved_models: list[Any] = [getattr(_CURRENT_MODULE, m) for m in _model_names]\n"
         )
         output_file.write("# pylint: disable=unidiomatic-typecheck\n")
-        output_file.write("_RESOLVED_MODELS = [\n")
+        output_file.write("_resolved_models = [\n")
         output_file.write("    m\n")
-        output_file.write("    for m in _RESOLVED_MODELS\n")
+        output_file.write("    for m in _resolved_models\n")
         output_file.write("    if type(m) == type(type) and issubclass(m, XcresultObject)\n")
         output_file.write("]\n")
         output_file.write("# pylint: enable=unidiomatic-typecheck\n")
-        output_file.write("MODELS = {m.__name__: m for m in _RESOLVED_MODELS}\n")
+        output_file.write(
+            "MODELS: dict[str, type[XcresultObject]] = {m.__name__: m for m in _resolved_models}\n"
+        )
 
 
 if __name__ == "__main__":

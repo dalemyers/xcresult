@@ -1,0 +1,22 @@
+{
+  "include": [
+    "generator",
+    "xcresult",
+    "tests"
+  ],
+  "exclude": [
+    "**/__pycache__",
+    "**/node_modules",
+    ".venv",
+    "generator/additional_methods"
+  ],
+  "typeCheckingMode": "strict",
+  "reportMissingImports": true,
+  "reportMissingTypeStubs": false,
+  "reportUnknownVariableType": "error",
+  "reportUnknownMemberType": "error",
+  "reportUnknownArgumentType": "error",
+  "reportUnknownParameterType": "error",
+  "pythonVersion": "3.10",
+  "pythonPlatform": "All"
+}

@@ -17,15 +17,15 @@ def flatten(list_of_lists: list[Any]) -> list[Any]:
 
 def xchash(item: Any) -> int:
     """Generate a hash for an object."""
-    all_hashes = []
+    all_hashes: list[int] = []
 
     if isinstance(item, list):
-        for sub_item in item:
+        for sub_item in item:  # type: ignore[var-annotated]
             all_hashes.append(xchash(sub_item))
         return hash(tuple(all_hashes))
 
     if isinstance(item, dict):
-        for key, value in item.items():
+        for key, value in item.items():  # type: ignore[var-annotated]
             all_hashes.append(xchash(key))
             all_hashes.append(xchash(value))
         return hash(tuple(all_hashes))
@@ -46,7 +46,7 @@ def xchash(item: Any) -> int:
 class XcresultObject:
     """Generated from xcresulttool format description."""
 
-    def _members(self) -> tuple:
+    def _members(self) -> tuple[Any, ...]:
         return ()
 
     def __eq__(self, other: Any) -> bool:
@@ -122,8 +122,8 @@ class ActionPlatformRecord(XcresultObject):
     identifier: str
     userDescription: str
 
-    def _members(self) -> tuple:
-        properties = [
+    def _members(self) -> tuple[Any, ...]:
+        properties: list[Any] = [
             self.identifier,
             self.userDescription,
         ]
@@ -158,8 +158,8 @@ class ActionSDKRecord(XcresultObject):
     operatingSystemVersion: str
     isInternal: bool
 
-    def _members(self) -> tuple:
-        properties = [
+    def _members(self) -> tuple[Any, ...]:
+        properties: list[Any] = [
             self.name,
             self.identifier,
             self.operatingSystemVersion,
@@ -190,8 +190,8 @@ class ActivityLogAnalyzerStep(XcresultObject):
 
     parentIndex: int
 
-    def _members(self) -> tuple:
-        properties = [
+    def _members(self) -> tuple[Any, ...]:
+        properties: list[Any] = [
             self.parentIndex,
         ]
         return tuple(properties + list(super()._members()))
@@ -225,8 +225,8 @@ class ActivityLogSectionAttachment(XcresultObject):
     minorVersion: int
     data: bytes
 
-    def _members(self) -> tuple:
-        properties = [
+    def _members(self) -> tuple[Any, ...]:
+        properties: list[Any] = [
             self.identifier,
             self.majorVersion,
             self.minorVersion,
@@ -363,8 +363,8 @@ class DocumentLocation(XcresultObject):
         """
         return self._get_property("StartingLineNumber", offset=1)
 
-    def _members(self) -> tuple:
-        properties = [
+    def _members(self) -> tuple[Any, ...]:
+        properties: list[Any] = [
             self.url,
             self.concreteTypeName,
         ]
@@ -399,8 +399,8 @@ class EntityIdentifier(XcresultObject):
     entityType: str
     sharedState: str
 
-    def _members(self) -> tuple:
-        properties = [
+    def _members(self) -> tuple[Any, ...]:
+        properties: list[Any] = [
             self.entityName,
             self.containerName,
             self.entityType,
@@ -431,8 +431,8 @@ class ObjectID(XcresultObject):
 
     hash: str
 
-    def _members(self) -> tuple:
-        properties = [
+    def _members(self) -> tuple[Any, ...]:
+        properties: list[Any] = [
             self.hash,
         ]
         return tuple(properties + list(super()._members()))
@@ -462,8 +462,8 @@ class SortedKeyValueArrayPair(XcresultObject):
     key: str
     value: Any
 
-    def _members(self) -> tuple:
-        properties = [
+    def _members(self) -> tuple[Any, ...]:
+        properties: list[Any] = [
             self.key,
             self.value,
         ]
@@ -494,8 +494,8 @@ class TestDocumentation(XcresultObject):
     content: str
     format: str
 
-    def _members(self) -> tuple:
-        properties = [
+    def _members(self) -> tuple[Any, ...]:
+        properties: list[Any] = [
             self.content,
             self.format,
         ]
@@ -526,8 +526,8 @@ class TypeDefinition(XcresultObject):
     name: str
     supertype: Optional["TypeDefinition"]
 
-    def _members(self) -> tuple:
-        properties = [
+    def _members(self) -> tuple[Any, ...]:
+        properties: list[Any] = [
             self.name,
             self.supertype,
         ]
@@ -556,8 +556,8 @@ class ActionAbstractTestSummary(XcresultObject):
 
     name: str | None
 
-    def _members(self) -> tuple:
-        properties = [
+    def _members(self) -> tuple[Any, ...]:
+        properties: list[Any] = [
             self.name,
         ]
         return tuple(properties + list(super()._members()))
@@ -619,8 +619,8 @@ class ActionDeviceRecord(XcresultObject):
     logicalCPUCoresPerPackage: int | None
     platformRecord: ActionPlatformRecord
 
-    def _members(self) -> tuple:
-        properties = [
+    def _members(self) -> tuple[Any, ...]:
+        properties: list[Any] = [
             self.name,
             self.isConcreteDevice,
             self.operatingSystemVersion,
@@ -671,8 +671,8 @@ class ActionTestNoticeSummary(XcresultObject):
     lineNumber: int
     timestamp: datetime.datetime | None
 
-    def _members(self) -> tuple:
-        properties = [
+    def _members(self) -> tuple[Any, ...]:
+        properties: list[Any] = [
             self.message,
             self.fileName,
             self.lineNumber,
@@ -723,8 +723,8 @@ class ActionTestPerformanceMetricSummary(XcresultObject):
     maxStandardDeviation: float | None
     polarity: str | None
 
-    def _members(self) -> tuple:
-        properties = [
+    def _members(self) -> tuple[Any, ...]:
+        properties: list[Any] = [
             self.displayName,
             self.unitOfMeasurement,
             self.measurements,
@@ -766,8 +766,8 @@ class ActionTestRepetitionPolicySummary(XcresultObject):
     totalIterations: int | None
     repetitionMode: str | None
 
-    def _members(self) -> tuple:
-        properties = [
+    def _members(self) -> tuple[Any, ...]:
+        properties: list[Any] = [
             self.iteration,
             self.totalIterations,
             self.repetitionMode,
@@ -801,8 +801,8 @@ class ActionsInvocationMetadata(XcresultObject):
     uniqueIdentifier: str
     schemeIdentifier: EntityIdentifier | None
 
-    def _members(self) -> tuple:
-        properties = [
+    def _members(self) -> tuple[Any, ...]:
+        properties: list[Any] = [
             self.creatingWorkspaceFilePath,
             self.uniqueIdentifier,
             self.schemeIdentifier,
@@ -834,8 +834,8 @@ class ActivityLogAnalyzerControlFlowStepEdge(XcresultObject):
     startLocation: DocumentLocation | None
     endLocation: DocumentLocation | None
 
-    def _members(self) -> tuple:
-        properties = [
+    def _members(self) -> tuple[Any, ...]:
+        properties: list[Any] = [
             self.startLocation,
             self.endLocation,
         ]
@@ -871,8 +871,8 @@ class ActivityLogAnalyzerEventStep(ActivityLogAnalyzerStep):
     description: str
     callDepth: int
 
-    def _members(self) -> tuple:
-        properties = [
+    def _members(self) -> tuple[Any, ...]:
+        properties: list[Any] = [
             self.title,
             self.location,
             self.description,
@@ -905,8 +905,8 @@ class ActivityLogMessageAnnotation(XcresultObject):
     title: str
     location: DocumentLocation | None
 
-    def _members(self) -> tuple:
-        properties = [
+    def _members(self) -> tuple[Any, ...]:
+        properties: list[Any] = [
             self.title,
             self.location,
         ]
@@ -935,8 +935,8 @@ class ArchiveInfo(XcresultObject):
 
     path: str | None
 
-    def _members(self) -> tuple:
-        properties = [
+    def _members(self) -> tuple[Any, ...]:
+        properties: list[Any] = [
             self.path,
         ]
         return tuple(properties + list(super()._members()))
@@ -994,8 +994,8 @@ class ConsoleLogItemLogData(XcresultObject):
     unixTimeInterval: float
     timeZone: str | None
 
-    def _members(self) -> tuple:
-        properties = [
+    def _members(self) -> tuple[Any, ...]:
+        properties: list[Any] = [
             self.message,
             self.subsystem,
             self.category,
@@ -1035,12 +1035,14 @@ class IssueSummary(XcresultObject):
       * Properties:
         + issueType: String
         + message: String
+        + compactMessage: String?
         + producingTarget: String?
         + documentLocationInCreatingWorkspace: DocumentLocation?
     """
 
     issueType: str
     message: str
+    compactMessage: str | None
     producingTarget: str | None
     documentLocationInCreatingWorkspace: DocumentLocation | None
 
@@ -1061,10 +1063,11 @@ class IssueSummary(XcresultObject):
 
         return f"* [ERROR] {self.message}\n  Found in {relative_path}:{self.documentLocationInCreatingWorkspace.starting_line_number}:{self.documentLocationInCreatingWorkspace.starting_column_number}"
 
-    def _members(self) -> tuple:
-        properties = [
+    def _members(self) -> tuple[Any, ...]:
+        properties: list[Any] = [
             self.issueType,
             self.message,
+            self.compactMessage,
             self.producingTarget,
             self.documentLocationInCreatingWorkspace,
         ]
@@ -1099,8 +1102,8 @@ class IssueTrackingMetadata(XcresultObject):
     comment: str | None
     summary: str
 
-    def _members(self) -> tuple:
-        properties = [
+    def _members(self) -> tuple[Any, ...]:
+        properties: list[Any] = [
             self.identifier,
             self.url,
             self.comment,
@@ -1133,8 +1136,8 @@ class Reference(XcresultObject):
     id: str
     targetType: TypeDefinition | None
 
-    def _members(self) -> tuple:
-        properties = [
+    def _members(self) -> tuple[Any, ...]:
+        properties: list[Any] = [
             self.id,
             self.targetType,
         ]
@@ -1175,8 +1178,8 @@ class ResultMetrics(XcresultObject):
     warningCount: int
     totalCoveragePercentage: float | None
 
-    def _members(self) -> tuple:
-        properties = [
+    def _members(self) -> tuple[Any, ...]:
+        properties: list[Any] = [
             self.analyzerWarningCount,
             self.errorCount,
             self.testsCount,
@@ -1210,8 +1213,8 @@ class SortedKeyValueArray(XcresultObject):
 
     storage: list[SortedKeyValueArrayPair]
 
-    def _members(self) -> tuple:
-        properties = [
+    def _members(self) -> tuple[Any, ...]:
+        properties: list[Any] = [
             self.storage,
         ]
         return tuple(properties + list(super()._members()))
@@ -1241,8 +1244,8 @@ class SourceCodeLocation(XcresultObject):
     filePath: str | None
     lineNumber: int | None
 
-    def _members(self) -> tuple:
-        properties = [
+    def _members(self) -> tuple[Any, ...]:
+        properties: list[Any] = [
             self.filePath,
             self.lineNumber,
         ]
@@ -1277,8 +1280,8 @@ class TestParameter(XcresultObject):
     typeName: str | None
     fullyQualifiedTypeName: str | None
 
-    def _members(self) -> tuple:
-        properties = [
+    def _members(self) -> tuple[Any, ...]:
+        properties: list[Any] = [
             self.label,
             self.name,
             self.typeName,
@@ -1313,8 +1316,8 @@ class TestTag(XcresultObject):
     name: str
     anchors: list[str]
 
-    def _members(self) -> tuple:
-        properties = [
+    def _members(self) -> tuple[Any, ...]:
+        properties: list[Any] = [
             self.identifier,
             self.name,
             self.anchors,
@@ -1356,8 +1359,8 @@ class TestValue(XcresultObject):
     isCollection: bool
     children: Optional["TestValue"]
 
-    def _members(self) -> tuple:
-        properties = [
+    def _members(self) -> tuple[Any, ...]:
+        properties: list[Any] = [
             self.description,
             self.debugDescription,
             self.typeName,
@@ -1399,8 +1402,8 @@ class ActionRunDestinationRecord(XcresultObject):
     localComputerRecord: ActionDeviceRecord
     targetSDKRecord: ActionSDKRecord
 
-    def _members(self) -> tuple:
-        properties = [
+    def _members(self) -> tuple[Any, ...]:
+        properties: list[Any] = [
             self.displayName,
             self.targetArchitecture,
             self.targetDeviceRecord,
@@ -1450,8 +1453,8 @@ class ActionTestAttachment(XcresultObject):
     payloadRef: Reference | None
     payloadSize: int
 
-    def _members(self) -> tuple:
-        properties = [
+    def _members(self) -> tuple[Any, ...]:
+        properties: list[Any] = [
             self.uniformTypeIdentifier,
             self.name,
             self.uuid,
@@ -1488,8 +1491,8 @@ class ActionTestConfiguration(XcresultObject):
 
     values: SortedKeyValueArray
 
-    def _members(self) -> tuple:
-        properties = [
+    def _members(self) -> tuple[Any, ...]:
+        properties: list[Any] = [
             self.values,
         ]
         return tuple(properties + list(super()._members()))
@@ -1520,8 +1523,8 @@ class ActionTestSummaryIdentifiableObject(ActionAbstractTestSummary):
     identifier: str | None
     identifierURL: str | None
 
-    def _members(self) -> tuple:
-        properties = [
+    def _members(self) -> tuple[Any, ...]:
+        properties: list[Any] = [
             self.identifier,
             self.identifierURL,
         ]
@@ -1557,8 +1560,8 @@ class ActivityLogAnalyzerControlFlowStep(ActivityLogAnalyzerStep):
     endLocation: DocumentLocation | None
     edges: list[ActivityLogAnalyzerControlFlowStepEdge]
 
-    def _members(self) -> tuple:
-        properties = [
+    def _members(self) -> tuple[Any, ...]:
+        properties: list[Any] = [
             self.title,
             self.startLocation,
             self.endLocation,
@@ -1599,8 +1602,8 @@ class ActivityLogMessage(XcresultObject):
     location: DocumentLocation | None
     annotations: list[ActivityLogMessageAnnotation]
 
-    def _members(self) -> tuple:
-        properties = [
+    def _members(self) -> tuple[Any, ...]:
+        properties: list[Any] = [
             self.type,
             self.title,
             self.shortTitle,
@@ -1637,8 +1640,8 @@ class CodeCoverageInfo(XcresultObject):
     reportRef: Reference | None
     archiveRef: Reference | None
 
-    def _members(self) -> tuple:
-        properties = [
+    def _members(self) -> tuple[Any, ...]:
+        properties: list[Any] = [
             self.hasCoverageData,
             self.reportRef,
             self.archiveRef,
@@ -1676,8 +1679,8 @@ class ConsoleLogItem(XcresultObject):
     content: str
     logData: ConsoleLogItemLogData | None
 
-    def _members(self) -> tuple:
-        properties = [
+    def _members(self) -> tuple[Any, ...]:
+        properties: list[Any] = [
             self.adaptorType,
             self.kind,
             self.timestamp,
@@ -1713,8 +1716,8 @@ class SourceCodeSymbolInfo(XcresultObject):
     symbolName: str | None
     location: SourceCodeLocation | None
 
-    def _members(self) -> tuple:
-        properties = [
+    def _members(self) -> tuple[Any, ...]:
+        properties: list[Any] = [
             self.imageName,
             self.symbolName,
             self.location,
@@ -1754,8 +1757,8 @@ class TestArgument(XcresultObject):
     typeName: str | None
     value: TestValue
 
-    def _members(self) -> tuple:
-        properties = [
+    def _members(self) -> tuple[Any, ...]:
+        properties: list[Any] = [
             self.parameter,
             self.identifier,
             self.description,
@@ -1792,8 +1795,8 @@ class TestAssociatedError(XcresultObject):
     code: int | None
     userInfo: SortedKeyValueArray | None
 
-    def _members(self) -> tuple:
-        properties = [
+    def _members(self) -> tuple[Any, ...]:
+        properties: list[Any] = [
             self.domain,
             self.code,
             self.userInfo,
@@ -1827,8 +1830,8 @@ class TestExpression(XcresultObject):
     value: TestValue | None
     subexpressions: list["TestExpression"]
 
-    def _members(self) -> tuple:
-        properties = [
+    def _members(self) -> tuple[Any, ...]:
+        properties: list[Any] = [
             self.sourceCode,
             self.value,
             self.subexpressions,
@@ -1873,7 +1876,7 @@ class TestFailureIssueSummary(IssueSummary):
 
         if (
             documentLocationInCreatingWorkspace is None
-            or documentLocationInCreatingWorkspace.path is None
+            or not documentLocationInCreatingWorkspace.path
         ):
             return output
 
@@ -1888,8 +1891,8 @@ class TestFailureIssueSummary(IssueSummary):
         )
         # pylint: enable=no-member
 
-    def _members(self) -> tuple:
-        properties = [
+    def _members(self) -> tuple[Any, ...]:
+        properties: list[Any] = [
             self.testCaseName,
         ]
         return tuple(properties + list(super()._members()))
@@ -1918,8 +1921,8 @@ class TestIssueSummary(IssueSummary):
 
     testCaseName: str
 
-    def _members(self) -> tuple:
-        properties = [
+    def _members(self) -> tuple[Any, ...]:
+        properties: list[Any] = [
             self.testCaseName,
         ]
         return tuple(properties + list(super()._members()))
@@ -1965,8 +1968,8 @@ class ActionTestActivitySummary(XcresultObject):
     expectedFailureIDs: list[str]
     warningSummaryIDs: list[str]
 
-    def _members(self) -> tuple:
-        properties = [
+    def _members(self) -> tuple[Any, ...]:
+        properties: list[Any] = [
             self.title,
             self.activityType,
             self.uuid,
@@ -2021,78 +2024,14 @@ class ActionTestMetadata(ActionTestSummaryIdentifiableObject):
         """
         return [self]
 
-    def _members(self) -> tuple:
-        properties = [
+    def _members(self) -> tuple[Any, ...]:
+        properties: list[Any] = [
             self.testStatus,
             self.duration,
             self.summaryRef,
             self.performanceMetricsCount,
             self.failureSummariesCount,
             self.activitySummariesCount,
-        ]
-        return tuple(properties + list(super()._members()))
-
-    def __eq__(self, other: Any) -> bool:
-        if not isinstance(other, self.__class__):
-            return False
-
-        # pylint: disable=protected-access
-        return self._members() == other._members()
-        # pylint: enable=protected-access
-
-    def __hash__(self) -> int:
-        return xchash(self)
-
-
-class ActionTestSummaryGroup(ActionTestSummaryIdentifiableObject):
-    """Generated from xcresulttool format description.
-
-    - ActionTestSummaryGroup
-      * Supertype: ActionTestSummaryIdentifiableObject
-      * Kind: object
-      * Properties:
-        + duration: Double
-        + subtests: [ActionTestSummaryIdentifiableObject]
-        + skipNoticeSummary: ActionTestNoticeSummary?
-        + summary: String?
-        + documentation: [TestDocumentation]
-        + trackedIssues: [IssueTrackingMetadata]
-        + tags: [TestTag]
-    """
-
-    duration: float
-    subtests: list[ActionTestSummaryIdentifiableObject]
-    skipNoticeSummary: ActionTestNoticeSummary | None
-    summary: str | None
-    documentation: list[TestDocumentation]
-    trackedIssues: list[IssueTrackingMetadata]
-    tags: list[TestTag]
-
-    def all_subtests(self) -> list[ActionTestSummaryIdentifiableObject]:
-        """Get all subtests.
-
-        :returns: All subtests
-        """
-        if not self.subtests:
-            return []
-
-        return flatten(
-            [
-                test.all_subtests()
-                for test in self.subtests
-                if isinstance(test, (ActionTestSummaryGroup, ActionTestMetadata))
-            ]
-        )
-
-    def _members(self) -> tuple:
-        properties = [
-            self.duration,
-            self.subtests,
-            self.skipNoticeSummary,
-            self.summary,
-            self.documentation,
-            self.trackedIssues,
-            self.tags,
         ]
         return tuple(properties + list(super()._members()))
 
@@ -2124,8 +2063,8 @@ class ActivityLogAnalyzerResultMessage(ActivityLogMessage):
     resultType: str | None
     keyEventIndex: int
 
-    def _members(self) -> tuple:
-        properties = [
+    def _members(self) -> tuple[Any, ...]:
+        properties: list[Any] = [
             self.steps,
             self.resultType,
             self.keyEventIndex,
@@ -2191,8 +2130,8 @@ class ActivityLogSection(XcresultObject):
     messages: list[ActivityLogMessage]
     attachments: list[ActivityLogSectionAttachment]
 
-    def _members(self) -> tuple:
-        properties = [
+    def _members(self) -> tuple[Any, ...]:
+        properties: list[Any] = [
             self.domainType,
             self.title,
             self.startTime,
@@ -2230,8 +2169,8 @@ class ConsoleLogSection(XcresultObject):
     title: str
     items: list[ConsoleLogItem]
 
-    def _members(self) -> tuple:
-        properties = [
+    def _members(self) -> tuple[Any, ...]:
+        properties: list[Any] = [
             self.title,
             self.items,
         ]
@@ -2268,8 +2207,8 @@ class ResultIssueSummaries(XcresultObject):
     warningSummaries: list[IssueSummary]
     testWarningSummaries: list[TestIssueSummary]
 
-    def _members(self) -> tuple:
-        properties = [
+    def _members(self) -> tuple[Any, ...]:
+        properties: list[Any] = [
             self.analyzerWarningSummaries,
             self.errorSummaries,
             self.testFailureSummaries,
@@ -2303,8 +2242,8 @@ class SourceCodeFrame(XcresultObject):
     addressString: str | None
     symbolInfo: SourceCodeSymbolInfo | None
 
-    def _members(self) -> tuple:
-        properties = [
+    def _members(self) -> tuple[Any, ...]:
+        properties: list[Any] = [
             self.addressString,
             self.symbolInfo,
         ]
@@ -2351,8 +2290,8 @@ class ActionResult(XcresultObject):
     diagnosticsRef: Reference | None
     consoleLogRef: Reference | None
 
-    def _members(self) -> tuple:
-        properties = [
+    def _members(self) -> tuple[Any, ...]:
+        properties: list[Any] = [
             self.resultName,
             self.status,
             self.metrics,
@@ -2394,8 +2333,8 @@ class ActivityLogCommandInvocationSection(ActivityLogSection):
     emittedOutput: str
     exitCode: int | None
 
-    def _members(self) -> tuple:
-        properties = [
+    def _members(self) -> tuple[Any, ...]:
+        properties: list[Any] = [
             self.commandDetails,
             self.emittedOutput,
             self.exitCode,
@@ -2426,8 +2365,8 @@ class ActivityLogMajorSection(ActivityLogSection):
 
     subtitle: str
 
-    def _members(self) -> tuple:
-        properties = [
+    def _members(self) -> tuple[Any, ...]:
+        properties: list[Any] = [
             self.subtitle,
         ]
         return tuple(properties + list(super()._members()))
@@ -2472,8 +2411,8 @@ class ActivityLogUnitTestSection(ActivityLogSection):
     runnablePath: str | None
     runnableUTI: str | None
 
-    def _members(self) -> tuple:
-        properties = [
+    def _members(self) -> tuple[Any, ...]:
+        properties: list[Any] = [
             self.testName,
             self.suiteName,
             self.summary,
@@ -2511,8 +2450,8 @@ class SourceCodeContext(XcresultObject):
     location: SourceCodeLocation | None
     callStack: list[SourceCodeFrame]
 
-    def _members(self) -> tuple:
-        properties = [
+    def _members(self) -> tuple[Any, ...]:
+        properties: list[Any] = [
             self.location,
             self.callStack,
         ]
@@ -2557,8 +2496,8 @@ class ActionRecord(XcresultObject):
     actionResult: ActionResult
     testPlanName: str | None
 
-    def _members(self) -> tuple:
-        properties = [
+    def _members(self) -> tuple[Any, ...]:
+        properties: list[Any] = [
             self.schemeCommandName,
             self.schemeTaskName,
             self.title,
@@ -2618,8 +2557,8 @@ class ActionTestFailureSummary(XcresultObject):
     isTopLevelFailure: bool
     expression: TestExpression | None
 
-    def _members(self) -> tuple:
-        properties = [
+    def _members(self) -> tuple[Any, ...]:
+        properties: list[Any] = [
             self.message,
             self.fileName,
             self.lineNumber,
@@ -2664,6 +2603,7 @@ class ActionTestIssueSummary(XcresultObject):
         + associatedError: TestAssociatedError?
         + sourceCodeContext: SourceCodeContext?
         + timestamp: Date?
+        + isTopLevel: Bool
     """
 
     message: str | None
@@ -2676,9 +2616,10 @@ class ActionTestIssueSummary(XcresultObject):
     associatedError: TestAssociatedError | None
     sourceCodeContext: SourceCodeContext | None
     timestamp: datetime.datetime | None
+    isTopLevel: bool
 
-    def _members(self) -> tuple:
-        properties = [
+    def _members(self) -> tuple[Any, ...]:
+        properties: list[Any] = [
             self.message,
             self.fileName,
             self.lineNumber,
@@ -2689,6 +2630,7 @@ class ActionTestIssueSummary(XcresultObject):
             self.associatedError,
             self.sourceCodeContext,
             self.timestamp,
+            self.isTopLevel,
         ]
         return tuple(properties + list(super()._members()))
 
@@ -2716,8 +2658,8 @@ class ActivityLogTargetBuildSection(ActivityLogMajorSection):
 
     productType: str | None
 
-    def _members(self) -> tuple:
-        properties = [
+    def _members(self) -> tuple[Any, ...]:
+        properties: list[Any] = [
             self.productType,
         ]
         return tuple(properties + list(super()._members()))
@@ -2751,8 +2693,8 @@ class ActionTestExpectedFailure(XcresultObject):
     failureSummary: ActionTestFailureSummary | None
     isTopLevelFailure: bool
 
-    def _members(self) -> tuple:
-        properties = [
+    def _members(self) -> tuple[Any, ...]:
+        properties: list[Any] = [
             self.uuid,
             self.failureReason,
             self.failureSummary,
@@ -2800,7 +2742,7 @@ class ActionTestableSummary(ActionAbstractTestSummary):
     testLanguage: str | None
     testRegion: str | None
 
-    def all_tests(self) -> list:
+    def all_tests(self) -> list[ActionTestSummaryIdentifiableObject]:
         """Get all subtests.
 
         :returns: All subtests
@@ -2816,8 +2758,8 @@ class ActionTestableSummary(ActionAbstractTestSummary):
             ]
         )
 
-    def _members(self) -> tuple:
-        properties = [
+    def _members(self) -> tuple[Any, ...]:
+        properties: list[Any] = [
             self.identifierURL,
             self.projectRelativePath,
             self.targetName,
@@ -2861,8 +2803,8 @@ class ActionsInvocationRecord(XcresultObject):
     actions: list[ActionRecord]
     archive: ArchiveInfo | None
 
-    def _members(self) -> tuple:
-        properties = [
+    def _members(self) -> tuple[Any, ...]:
+        properties: list[Any] = [
             self.metadataRef,
             self.metrics,
             self.issues,
@@ -2895,8 +2837,8 @@ class ActionTestPlanRunSummary(ActionAbstractTestSummary):
 
     testableSummaries: list[ActionTestableSummary]
 
-    def _members(self) -> tuple:
-        properties = [
+    def _members(self) -> tuple[Any, ...]:
+        properties: list[Any] = [
             self.testableSummaries,
         ]
         return tuple(properties + list(super()._members()))
@@ -2953,8 +2895,8 @@ class ActionTestSummary(ActionTestSummaryIdentifiableObject):
     trackedIssues: list[IssueTrackingMetadata]
     tags: list[TestTag]
 
-    def _members(self) -> tuple:
-        properties = [
+    def _members(self) -> tuple[Any, ...]:
+        properties: list[Any] = [
             self.testStatus,
             self.duration,
             self.performanceMetrics,
@@ -2985,6 +2927,82 @@ class ActionTestSummary(ActionTestSummaryIdentifiableObject):
         return xchash(self)
 
 
+class ActionTestSummaryGroup(ActionTestSummaryIdentifiableObject):
+    """Generated from xcresulttool format description.
+
+    - ActionTestSummaryGroup
+      * Supertype: ActionTestSummaryIdentifiableObject
+      * Kind: object
+      * Properties:
+        + duration: Double
+        + subtests: [ActionTestSummaryIdentifiableObject]
+        + failureSummaries: [ActionTestFailureSummary]
+        + warningSummaries: [ActionTestIssueSummary]
+        + expectedFailures: [ActionTestExpectedFailure]
+        + skipNoticeSummary: ActionTestNoticeSummary?
+        + activitySummaries: [ActionTestActivitySummary]
+        + summary: String?
+        + documentation: [TestDocumentation]
+        + trackedIssues: [IssueTrackingMetadata]
+        + tags: [TestTag]
+    """
+
+    duration: float
+    subtests: list[ActionTestSummaryIdentifiableObject]
+    failureSummaries: list[ActionTestFailureSummary]
+    warningSummaries: list[ActionTestIssueSummary]
+    expectedFailures: list[ActionTestExpectedFailure]
+    skipNoticeSummary: ActionTestNoticeSummary | None
+    activitySummaries: list[ActionTestActivitySummary]
+    summary: str | None
+    documentation: list[TestDocumentation]
+    trackedIssues: list[IssueTrackingMetadata]
+    tags: list[TestTag]
+
+    def all_subtests(self) -> list[ActionTestSummaryIdentifiableObject]:
+        """Get all subtests.
+
+        :returns: All subtests
+        """
+        if not self.subtests:
+            return []
+
+        return flatten(
+            [
+                test.all_subtests()
+                for test in self.subtests
+                if isinstance(test, (ActionTestSummaryGroup, ActionTestMetadata))
+            ]
+        )
+
+    def _members(self) -> tuple[Any, ...]:
+        properties: list[Any] = [
+            self.duration,
+            self.subtests,
+            self.failureSummaries,
+            self.warningSummaries,
+            self.expectedFailures,
+            self.skipNoticeSummary,
+            self.activitySummaries,
+            self.summary,
+            self.documentation,
+            self.trackedIssues,
+            self.tags,
+        ]
+        return tuple(properties + list(super()._members()))
+
+    def __eq__(self, other: Any) -> bool:
+        if not isinstance(other, self.__class__):
+            return False
+
+        # pylint: disable=protected-access
+        return self._members() == other._members()
+        # pylint: enable=protected-access
+
+    def __hash__(self) -> int:
+        return xchash(self)
+
+
 class ActionTestPlanRunSummaries(XcresultObject):
     """Generated from xcresulttool format description.
 
@@ -2996,8 +3014,8 @@ class ActionTestPlanRunSummaries(XcresultObject):
 
     summaries: list[ActionTestPlanRunSummary]
 
-    def _members(self) -> tuple:
-        properties = [
+    def _members(self) -> tuple[Any, ...]:
+        properties: list[Any] = [
             self.summaries,
         ]
         return tuple(properties + list(super()._members()))
@@ -3015,12 +3033,12 @@ class ActionTestPlanRunSummaries(XcresultObject):
 
 
 _CURRENT_MODULE = sys.modules[__name__]
-_MODEL_NAMES = dir(_CURRENT_MODULE)
-_MODEL_NAMES = [m for m in _MODEL_NAMES if not m.startswith("__")]
-_RESOLVED_MODELS = [getattr(_CURRENT_MODULE, m) for m in _MODEL_NAMES]
+_model_names: list[str] = dir(_CURRENT_MODULE)
+_model_names = [m for m in _model_names if not m.startswith("__")]
+_resolved_models: list[Any] = [getattr(_CURRENT_MODULE, m) for m in _model_names]
 # pylint: disable=unidiomatic-typecheck
-_RESOLVED_MODELS = [
-    m for m in _RESOLVED_MODELS if type(m) == type(type) and issubclass(m, XcresultObject)
+_resolved_models = [
+    m for m in _resolved_models if type(m) == type(type) and issubclass(m, XcresultObject)
 ]
 # pylint: enable=unidiomatic-typecheck
-MODELS = {m.__name__: m for m in _RESOLVED_MODELS}
+MODELS: dict[str, type[XcresultObject]] = {m.__name__: m for m in _resolved_models}

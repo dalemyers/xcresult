@@ -10,5 +10,7 @@ python -m pylint --rcfile=pylintrc xcresult tests
 
 python -m mypy --ignore-missing-imports xcresult/ tests/
 
+python -m pyright
+
 popd > /dev/null
 
