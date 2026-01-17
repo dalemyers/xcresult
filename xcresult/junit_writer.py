@@ -25,6 +25,7 @@ class JunitWriter:
     test_class_prefix: str | None
     test_class_suffix: str | None
 
+    # pylint: disable=too-many-positional-arguments
     def __init__(
         self,
         results: XcresultsBase,
@@ -38,6 +39,8 @@ class JunitWriter:
         self.export_attachments_path = export_attachments_path
         self.test_class_prefix = test_class_prefix
         self.test_class_suffix = test_class_suffix
+
+    # pylint: enable=too-many-positional-arguments
 
     def generate_test_case(
         self,

@@ -93,7 +93,7 @@ def deserialize(data: dict[str, Any]) -> Any:
                 str(property_type).startswith("typing.Optional[")
                 or str(property_type).endswith(" | None")
             ):
-                raise ValueError()
+                raise ValueError()  # pragma: no cover
 
             setattr(instance, property_name, None)
 

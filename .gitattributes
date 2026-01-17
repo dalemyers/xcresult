@@ -1,1 +1,2 @@
 *.py text eol=lf
+tests/data/*.xcresult filter=lfs diff=lfs merge=lfs -text

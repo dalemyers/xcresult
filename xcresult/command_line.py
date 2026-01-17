@@ -10,8 +10,9 @@ from typing import Sequence
 
 try:
     import xcresult
-except ImportError:
+except ImportError:  # pragma: no cover
     # Insert the package into the PATH
+    # This fallback is for standalone script execution and is tested via integration tests
     sys.path.insert(0, os.path.abspath(os.path.join(os.path.abspath(__file__), "..", "..")))
     import xcresult
 
