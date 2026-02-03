@@ -147,20 +147,26 @@ class JunitWriter:
             configuration.set("name", "Configuration")
             configuration.set("value", configuration_name)
 
-            all_tests = summary.all_tests()
+            suite_total_tests = 0
+            suite_total_failures = 0
+            suite_total_skipped = 0
 
-            for test in all_tests:
+            for test in test.all_subtests():
                 if not isinstance(test, ActionTestMetadata):
                     raise TypeError(f"Expected ActionTestMetadata, got {type(test)}")
 
                 test_count, failure_count, skipped_count = self.generate_test_case(suite, test)  # type: ignore[arg-type]
-                total_tests += test_count
-                total_failures += failure_count
-                total_skipped += skipped_count
+                suite_total_tests += test_count
+                suite_total_failures += failure_count
+                suite_total_skipped += skipped_count
 
-            suite.set("tests", str(total_tests))
-            suite.set("failures", str(total_failures))
-            suite.set("skipped", str(total_skipped))
+            suite.set("tests", str(suite_total_tests))
+            suite.set("failures", str(suite_total_failures))
+            suite.set("skipped", str(suite_total_skipped))
+
+            total_tests += suite_total_tests
+            total_failures += suite_total_failures
+            total_skipped += suite_total_skipped
 
         return total_tests, total_failures, total_skipped
 
