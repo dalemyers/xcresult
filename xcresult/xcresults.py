@@ -103,12 +103,23 @@ class Xcresults(XcresultsBase):
         export_attachments_path: str | None = None,
         test_class_prefix: str | None = None,
         test_class_suffix: str | None = None,
+        collapse_retries: bool = False,
     ) -> None:
         """Write the test results as a junit.
 
         :param path: The path to write the junit to
         :param export_attachments_path: The path to write the attachments to. If None, the attachments will not be exported.
+        :param test_class_prefix: Optional prefix prepended to every test's classname.
+        :param test_class_suffix: Optional suffix appended to every test's classname.
+        :param collapse_retries: When True, collapse the multiple leaves a test
+            produces under ``-retry-tests-on-failure`` into a single testcase (a
+            pass if any attempt passed). Defaults to False (one testcase per attempt).
         """
         JunitWriter(
-            self, path, export_attachments_path, test_class_prefix, test_class_suffix
+            self,
+            path,
+            export_attachments_path,
+            test_class_prefix,
+            test_class_suffix,
+            collapse_retries,
         ).write()

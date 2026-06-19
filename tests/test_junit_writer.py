@@ -459,3 +459,116 @@ def test_generate_test_suite_with_multiple_test_groups():
         )
         assert suite2_failures == 1, f"Suite 2 should have 1 failure, got {suite2_failures}"
         assert suite2_skipped == 1, f"Suite 2 should have 1 skipped, got {suite2_skipped}"
+
+
+def _retry_meta(identifier: str, name: str, status: str) -> "xcresult.ActionTestMetadata":
+    """Build a leaf test result for the retry fixtures."""
+    meta = xcresult.ActionTestMetadata()
+    meta.identifier = identifier
+    meta.name = name
+    meta.duration = 1.0
+    meta.testStatus = status
+    # summaryRef None keeps generate_test_case from touching the bundle.
+    meta.summaryRef = None
+    return meta
+
+
+def _retry_summary() -> "xcresult.ActionTestableSummary":
+    """A testable whose suite holds retried tests (duplicate identifiers).
+
+    Mirrors ``-retry-tests-on-failure``: ``flaky()`` fails then passes (a flaky
+    pass), ``fails()`` fails twice (never passes), plus a clean pass and a skip.
+    Distinct tests: 4 (1 pass, 1 flaky-pass, 1 fail, 1 skip). Raw leaves: 6.
+    """
+    summary = xcresult.ActionTestableSummary()
+    summary.name = "MockTarget"
+
+    group = xcresult.ActionTestSummaryGroup()
+    group.identifier = "FlakySuite"
+    group.subtests = [
+        _retry_meta("FlakySuite/flaky()", "flaky()", "Failed"),
+        _retry_meta("FlakySuite/flaky()", "flaky()", "Success"),
+        _retry_meta("FlakySuite/passes()", "passes()", "Success"),
+        _retry_meta("FlakySuite/fails()", "fails()", "Failed"),
+        _retry_meta("FlakySuite/fails()", "fails()", "Failed"),
+        _retry_meta("FlakySuite/skips()", "skips()", "Skipped"),
+    ]
+    summary.tests = [group]
+    return summary
+
+
+def test_collapse_retries_off_counts_every_attempt():
+    """Default behavior (collapse_retries=False) emits one testcase per attempt."""
+    test_data_path = os.path.join(os.path.dirname(__file__), "data", "TestSuccess.xcresult")
+
+    with tempfile.TemporaryDirectory() as temp_dir:
+        bundle = xcresult.Xcresults(test_data_path)
+        writer = JunitWriter(bundle, os.path.join(temp_dir, "junit.xml"))
+
+        root = ET.Element("testsuites")
+        total_tests, total_failures, total_skipped = writer.generate_test_suite(
+            root, _retry_summary(), "Test Configuration"
+        )
+
+        # 6 raw leaves: failed flaky attempt + 2 failed fails() attempts = 3 failures.
+        assert total_tests == 6, f"Expected 6 (every attempt), got {total_tests}"
+        assert total_failures == 3, f"Expected 3 failures, got {total_failures}"
+        assert total_skipped == 1, f"Expected 1 skipped, got {total_skipped}"
+
+        # flaky() appears twice (once per attempt) when not collapsing.
+        flaky_cases = root.xpath("//testcase[@name='flaky()']")
+        assert len(flaky_cases) == 2, f"Expected 2 flaky() cases, got {len(flaky_cases)}"
+
+
+def test_collapse_retries_on_merges_attempts():
+    """collapse_retries=True keeps one testcase per identifier with the final result."""
+    test_data_path = os.path.join(os.path.dirname(__file__), "data", "TestSuccess.xcresult")
+
+    with tempfile.TemporaryDirectory() as temp_dir:
+        bundle = xcresult.Xcresults(test_data_path)
+        writer = JunitWriter(bundle, os.path.join(temp_dir, "junit.xml"), collapse_retries=True)
+
+        root = ET.Element("testsuites")
+        total_tests, total_failures, total_skipped = writer.generate_test_suite(
+            root, _retry_summary(), "Test Configuration"
+        )
+
+        # 4 distinct tests: passes(), flaky() (passed on retry), fails(), skips().
+        assert total_tests == 4, f"Expected 4 distinct tests, got {total_tests}"
+        assert total_failures == 1, f"Expected 1 failure (fails()), got {total_failures}"
+        assert total_skipped == 1, f"Expected 1 skipped, got {total_skipped}"
+
+        # flaky() collapses to a single PASSING testcase (no <failure> child).
+        flaky_cases = root.xpath("//testcase[@name='flaky()']")
+        assert len(flaky_cases) == 1, f"Expected 1 flaky() case, got {len(flaky_cases)}"
+        assert not flaky_cases[0].findall("failure"), "flaky() should collapse to a pass"
+
+        # fails() collapses to a single FAILING testcase.
+        fails_cases = root.xpath("//testcase[@name='fails()']")
+        assert len(fails_cases) == 1, f"Expected 1 fails() case, got {len(fails_cases)}"
+        assert fails_cases[0].findall("failure"), "fails() should remain a failure"
+
+
+def test_collapse_retries_keeps_anon_tests_separate():
+    """Leaves without an identifier are never merged together when collapsing."""
+    test_data_path = os.path.join(os.path.dirname(__file__), "data", "TestSuccess.xcresult")
+
+    with tempfile.TemporaryDirectory() as temp_dir:
+        bundle = xcresult.Xcresults(test_data_path)
+        writer = JunitWriter(bundle, os.path.join(temp_dir, "junit.xml"), collapse_retries=True)
+
+        summary = xcresult.ActionTestableSummary()
+        summary.name = "MockTarget"
+        group = xcresult.ActionTestSummaryGroup()
+        group.identifier = "Suite"
+        first = _retry_meta("", "anon-a", "Success")
+        first.identifier = None
+        second = _retry_meta("", "anon-b", "Success")
+        second.identifier = None
+        group.subtests = [first, second]
+        summary.tests = [group]
+
+        root = ET.Element("testsuites")
+        total_tests, _, _ = writer.generate_test_suite(root, summary, "Test Configuration")
+
+        assert total_tests == 2, f"Un-identified leaves must not merge, got {total_tests}"

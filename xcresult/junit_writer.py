@@ -9,6 +9,7 @@ from lxml import etree as ET
 from xcresult.model import (
     ActionTestMetadata,
     ActionTestSummary,
+    ActionTestSummaryIdentifiableObject,
     ActionTestableSummary,
     ActionTestPlanRunSummaries,
 )
@@ -24,6 +25,7 @@ class JunitWriter:
     export_attachments_path: str | None
     test_class_prefix: str | None
     test_class_suffix: str | None
+    collapse_retries: bool
 
     # pylint: disable=too-many-positional-arguments
     def __init__(
@@ -33,14 +35,68 @@ class JunitWriter:
         export_attachments_path: str | None = None,
         test_class_prefix: str | None = None,
         test_class_suffix: str | None = None,
+        collapse_retries: bool = False,
     ) -> None:
         self.results = results
         self.junit_path = junit_path
         self.export_attachments_path = export_attachments_path
         self.test_class_prefix = test_class_prefix
         self.test_class_suffix = test_class_suffix
+        self.collapse_retries = collapse_retries
 
     # pylint: enable=too-many-positional-arguments
+
+    def _collapse_retries(
+        self,
+        tests: list[ActionTestSummaryIdentifiableObject],
+    ) -> list[ActionTestSummaryIdentifiableObject]:
+        """Collapse retry attempts of the same test into one representative.
+
+        Under ``xcodebuild ... -retry-tests-on-failure`` a test that fails and is
+        retried appears as multiple leaves sharing one ``identifier``. Emitting a
+        ``<testcase>`` per attempt inflates the totals and duplicates the test.
+        This keeps a single representative per identifier: a successful attempt if
+        any passed (a flaky pass), otherwise a failing attempt, otherwise the
+        first attempt (e.g. all skipped). First-seen order is preserved.
+
+        Leaves without an identifier cannot be matched to their retries, so each
+        is kept as its own entry.
+
+        :param tests: The flattened test leaves for a single suite.
+
+        :returns: One representative test per distinct identifier.
+        """
+
+        order: list[str] = []
+        groups: dict[str, list[ActionTestSummaryIdentifiableObject]] = {}
+
+        for test in tests:
+            # Key un-identified leaves by object identity so they never merge.
+            key = test.identifier if test.identifier is not None else f"\x00{id(test)}"
+            if key not in groups:
+                groups[key] = []
+                order.append(key)
+            groups[key].append(test)
+
+        representatives: list[ActionTestSummaryIdentifiableObject] = []
+        for key in order:
+            attempts = groups[key]
+            # A pass on any attempt wins (flaky pass); otherwise the first real
+            # failure; otherwise the first attempt (covers an all-skipped group).
+            chosen = next(
+                (t for t in attempts if getattr(t, "testStatus", None) == "Success"),
+                None,
+            )
+            if chosen is None:
+                chosen = next(
+                    (t for t in attempts if getattr(t, "testStatus", None) != "Skipped"),
+                    None,
+                )
+            if chosen is None:
+                chosen = attempts[0]
+            representatives.append(chosen)
+
+        return representatives
 
     def generate_test_case(
         self,
@@ -151,11 +207,18 @@ class JunitWriter:
             suite_total_failures = 0
             suite_total_skipped = 0
 
-            for test in test.all_subtests():
-                if not isinstance(test, ActionTestMetadata):
-                    raise TypeError(f"Expected ActionTestMetadata, got {type(test)}")
+            # `summary.tests` is typed as the base identifiable object (generated
+            # model); the runtime elements are groups/metadata that implement
+            # all_subtests.
+            subtests = test.all_subtests()  # type: ignore[attr-defined]
+            if self.collapse_retries:
+                subtests = self._collapse_retries(subtests)
 
-                test_count, failure_count, skipped_count = self.generate_test_case(suite, test)  # type: ignore[arg-type]
+            for subtest in subtests:
+                if not isinstance(subtest, ActionTestMetadata):
+                    raise TypeError(f"Expected ActionTestMetadata, got {type(subtest)}")
+
+                test_count, failure_count, skipped_count = self.generate_test_case(suite, subtest)
                 suite_total_tests += test_count
                 suite_total_failures += failure_count
                 suite_total_skipped += skipped_count

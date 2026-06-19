@@ -55,7 +55,11 @@ def _handle_junit(args: argparse.Namespace) -> int:
 
     try:
         bundle = xcresult.Xcresults(args.bundle_path)
-        bundle.write_junit(args.output_path, args.export_attachments_path)
+        bundle.write_junit(
+            args.output_path,
+            args.export_attachments_path,
+            collapse_retries=args.collapse_retries,
+        )
         # pylint: disable=broad-exception-caught
     except Exception as ex:
         # pylint: enable=broad-exception-caught
@@ -184,6 +188,17 @@ def _handle_arguments() -> int:
         dest="export_attachments_path",
         action="store",
         help="Set the output path for the attachments to be written to",
+    )
+
+    junit_parser.add_argument(
+        "--collapse-retries",
+        dest="collapse_retries",
+        action="store_true",
+        help=(
+            "Collapse the multiple results a test produces under "
+            "-retry-tests-on-failure into a single testcase (a pass if any "
+            "attempt passed). Default: one testcase per attempt."
+        ),
     )
 
     junit_parser.set_defaults(subcommand="junit")

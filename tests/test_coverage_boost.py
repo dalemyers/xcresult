@@ -17,9 +17,7 @@ from lxml import etree as ET
 
 def test_junit_writer_type_error():
     """Test JUnit writer raises TypeError for non-ActionTestMetadata in all_tests."""
-    test_data_path = os.path.join(
-        os.path.dirname(__file__), "data", "TestSuccess.xcresult"
-    )
+    test_data_path = os.path.join(os.path.dirname(__file__), "data", "TestSuccess.xcresult")
 
     with tempfile.TemporaryDirectory() as temp_dir:
         output_path = os.path.join(temp_dir, "junit.xml")
@@ -28,13 +26,15 @@ def test_junit_writer_type_error():
 
         root = ET.Element("testsuites")
 
-        # Create a mock testable summary
+        # Create a mock testable summary whose single test group yields a
+        # non-ActionTestMetadata leaf from all_subtests() (what the writer
+        # actually iterates), so the isinstance guard raises.
+        test_group = mock.Mock()
+        test_group.all_subtests = mock.Mock(return_value=["not_a_test_metadata"])
+
         testable_summary = mock.Mock(spec=xcresult.ActionTestableSummary)
         testable_summary.name = "TestSuite"
-        testable_summary.tests = [mock.Mock()]  # Mock test list
-
-        # Mock all_tests to return something that's not ActionTestMetadata
-        testable_summary.all_tests = mock.Mock(return_value=["not_a_test_metadata"])
+        testable_summary.tests = [test_group]
 
         try:
             writer.generate_test_suite(root, testable_summary, "Config")
@@ -45,9 +45,7 @@ def test_junit_writer_type_error():
 
 def test_command_line_empty_summaries():
     """Test command line check-issues with empty summaries list."""
-    test_data_path = os.path.join(
-        os.path.dirname(__file__), "data", "TestSuccess.xcresult"
-    )
+    test_data_path = os.path.join(os.path.dirname(__file__), "data", "TestSuccess.xcresult")
 
     # Create a bundle with explicitly empty error summaries to hit line 77-80
     with mock.patch(
@@ -63,9 +61,7 @@ def test_command_line_empty_summaries():
 
 def test_command_line_issue_without_location():
     """Test command line check-issues with issue that has no location."""
-    test_data_path = os.path.join(
-        os.path.dirname(__file__), "data", "TestSuccess.xcresult"
-    )
+    test_data_path = os.path.join(os.path.dirname(__file__), "data", "TestSuccess.xcresult")
 
     with mock.patch("sys.argv", ["xcresult", "-b", test_data_path, "check-issues"]):
         with mock.patch("xcresult.Xcresults") as mock_xcresults:
@@ -98,9 +94,7 @@ def test_command_line_issue_without_location():
 
 def test_xcresults_export_attachment():
     """Test export_attachment method in Xcresults."""
-    test_data_path = os.path.join(
-        os.path.dirname(__file__), "data", "TestSuccess.xcresult"
-    )
+    test_data_path = os.path.join(os.path.dirname(__file__), "data", "TestSuccess.xcresult")
 
     with tempfile.TemporaryDirectory() as temp_dir:
         bundle = xcresult.Xcresults(test_data_path)
@@ -110,16 +104,12 @@ def test_xcresults_export_attachment():
         with mock.patch("xcresult.xcresults.export_attachment") as mock_export:
             bundle.export_attachment("test-id", "file", output_path)
             # Should call the underlying function (line 51)
-            mock_export.assert_called_once_with(
-                test_data_path, "test-id", "file", output_path
-            )
+            mock_export.assert_called_once_with(test_data_path, "test-id", "file", output_path)
 
 
 def test_xcresults_export_no_actions_invocation_record():
     """Test export_test_attachments with no actions invocation record."""
-    test_data_path = os.path.join(
-        os.path.dirname(__file__), "data", "TestSuccess.xcresult"
-    )
+    test_data_path = os.path.join(os.path.dirname(__file__), "data", "TestSuccess.xcresult")
 
     with tempfile.TemporaryDirectory() as temp_dir:
         bundle = xcresult.Xcresults(test_data_path)
@@ -144,9 +134,7 @@ def test_xcresults_export_no_actions_invocation_record():
 
 def test_xcresults_export_missing_summaries():
     """Test export_test_attachments with missing summaries."""
-    test_data_path = os.path.join(
-        os.path.dirname(__file__), "data", "TestSuccess.xcresult"
-    )
+    test_data_path = os.path.join(os.path.dirname(__file__), "data", "TestSuccess.xcresult")
 
     with tempfile.TemporaryDirectory() as temp_dir:
         bundle = xcresult.Xcresults(test_data_path)
@@ -157,9 +145,7 @@ def test_xcresults_export_missing_summaries():
             mock_summaries = xcresult.ActionTestPlanRunSummaries()
             mock_summaries.summaries = None
 
-            with mock.patch(
-                "xcresult.xcresults.deserialize", return_value=mock_summaries
-            ):
+            with mock.patch("xcresult.xcresults.deserialize", return_value=mock_summaries):
                 try:
                     bundle.export_test_attachments(temp_dir)
                     # May succeed if there are no actions, or fail if there are
@@ -170,9 +156,7 @@ def test_xcresults_export_missing_summaries():
 
 def test_xcresults_export_missing_testable_summaries():
     """Test export_test_attachments with missing testable summaries."""
-    test_data_path = os.path.join(
-        os.path.dirname(__file__), "data", "TestSuccess.xcresult"
-    )
+    test_data_path = os.path.join(os.path.dirname(__file__), "data", "TestSuccess.xcresult")
 
     with tempfile.TemporaryDirectory() as temp_dir:
         bundle = xcresult.Xcresults(test_data_path)
@@ -195,9 +179,7 @@ def test_xcresults_export_missing_testable_summaries():
 
 def test_xcresults_export_missing_tests():
     """Test export_test_attachments with missing tests."""
-    test_data_path = os.path.join(
-        os.path.dirname(__file__), "data", "TestSuccess.xcresult"
-    )
+    test_data_path = os.path.join(os.path.dirname(__file__), "data", "TestSuccess.xcresult")
 
     with tempfile.TemporaryDirectory() as temp_dir:
         bundle = xcresult.Xcresults(test_data_path)
@@ -227,9 +209,7 @@ def test_xcresulttool_export_with_failure_attachments():
     """Test exporting attachments from failure summaries."""
     from xcresult.xcresulttool import export_action_test_summary_group
 
-    test_data_path = os.path.join(
-        os.path.dirname(__file__), "data", "TestFailure.xcresult"
-    )
+    test_data_path = os.path.join(os.path.dirname(__file__), "data", "TestFailure.xcresult")
 
     with tempfile.TemporaryDirectory() as temp_dir:
         # Create a test with failure summaries that have attachments
@@ -266,9 +246,7 @@ def test_xcresulttool_export_activity_without_attachments():
     """Test exporting when activity summaries have no attachments."""
     from xcresult.xcresulttool import export_action_test_summary_group
 
-    test_data_path = os.path.join(
-        os.path.dirname(__file__), "data", "TestSuccess.xcresult"
-    )
+    test_data_path = os.path.join(os.path.dirname(__file__), "data", "TestSuccess.xcresult")
 
     with tempfile.TemporaryDirectory() as temp_dir:
         test = xcresult.ActionTestMetadata()
@@ -299,9 +277,7 @@ def test_xcresulttool_export_attachment_without_filename():
     """Test exporting attachment without filename."""
     from xcresult.xcresulttool import export_action_test_summary_group
 
-    test_data_path = os.path.join(
-        os.path.dirname(__file__), "data", "TestSuccess.xcresult"
-    )
+    test_data_path = os.path.join(os.path.dirname(__file__), "data", "TestSuccess.xcresult")
 
     with tempfile.TemporaryDirectory() as temp_dir:
         test = xcresult.ActionTestMetadata()
@@ -338,9 +314,7 @@ def test_xcresulttool_export_attachment_file_exists():
     """Test exporting attachment when file already exists."""
     from xcresult.xcresulttool import export_action_test_summary_group
 
-    test_data_path = os.path.join(
-        os.path.dirname(__file__), "data", "TestSuccess.xcresult"
-    )
+    test_data_path = os.path.join(os.path.dirname(__file__), "data", "TestSuccess.xcresult")
 
     with tempfile.TemporaryDirectory() as temp_dir:
         test = xcresult.ActionTestMetadata()
