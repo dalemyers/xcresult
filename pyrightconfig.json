@@ -18,5 +18,20 @@
   "reportUnknownArgumentType": "error",
   "reportUnknownParameterType": "error",
   "pythonVersion": "3.10",
-  "pythonPlatform": "All"
+  "pythonPlatform": "All",
+  "executionEnvironments": [
+    {
+      "//": "Test code legitimately exercises internals (protected members), assigns boundary values such as None to non-optional model fields for equality/hash checks, and consumes loosely-typed libraries (lxml, unittest.mock). These strict rules are relaxed for tests only; the library remains fully strict.",
+      "root": "tests",
+      "reportPrivateUsage": "none",
+      "reportAttributeAccessIssue": "none",
+      "reportIndexIssue": "none",
+      "reportArgumentType": "none",
+      "reportUnknownMemberType": "none",
+      "reportUnknownVariableType": "none",
+      "reportUnknownParameterType": "none",
+      "reportUnknownArgumentType": "none",
+      "reportIncompatibleMethodOverride": "none"
+    }
+  ]
 }

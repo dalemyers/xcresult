@@ -7,8 +7,7 @@ from unittest import mock
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 # pylint: disable=wrong-import-position
-import xcresult
-from xcresult.xcresulttool import deserialize, _export
+from xcresult.xcresulttool import _export
 
 # pylint: enable=wrong-import-position
 

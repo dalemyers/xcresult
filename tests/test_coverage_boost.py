@@ -140,7 +140,7 @@ def test_xcresults_export_missing_summaries():
         bundle = xcresult.Xcresults(test_data_path)
 
         # Mock to create an action with testsRef but no summaries
-        with mock.patch.object(bundle, "get") as mock_get:
+        with mock.patch.object(bundle, "get"):
             # Mock the deserialization to return summaries with no summaries list
             mock_summaries = xcresult.ActionTestPlanRunSummaries()
             mock_summaries.summaries = None

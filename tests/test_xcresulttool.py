@@ -4,7 +4,6 @@ import datetime
 import os
 import sys
 import tempfile
-from unittest import mock
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 # pylint: disable=wrong-import-position
@@ -221,11 +220,7 @@ def test_export_attachment():
                                                     "file",
                                                     output_path,
                                                 )
-                                                assert os.path.exists(
-                                                    output_path
-                                                ) or os.path.dirname(
-                                                    os.path.exists(output_path)
-                                                )
+                                                assert os.path.exists(output_path)
                                                 return
 
 

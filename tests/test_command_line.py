@@ -3,12 +3,10 @@
 import os
 import sys
 import tempfile
-import shutil
 from unittest import mock
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 # pylint: disable=wrong-import-position
-import xcresult.command_line
 from xcresult.command_line import IssueType, run
 
 # pylint: enable=wrong-import-position

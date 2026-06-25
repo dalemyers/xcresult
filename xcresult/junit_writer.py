@@ -16,6 +16,9 @@ from xcresult.model import (
 from xcresult.xcresult_base import XcresultsBase
 from xcresult.xcresulttool import deserialize
 
+# lxml exposes its element type only via the underscore-prefixed name.
+Element = ET._Element  # pylint: disable=protected-access  # pyright: ignore[reportPrivateUsage]
+
 
 class JunitWriter:
     """Junit writer for writing out the results of tests."""
@@ -100,7 +103,7 @@ class JunitWriter:
 
     def generate_test_case(
         self,
-        suite: ET.Element,  # type: ignore
+        suite: Element,
         test: ActionTestMetadata,
     ) -> tuple[int, int, int]:
         """Generate the XML for a test case.
@@ -181,7 +184,7 @@ class JunitWriter:
 
     def generate_test_suite(
         self,
-        root: ET.Element,  # type: ignore
+        root: Element,
         summary: ActionTestableSummary,
         configuration_name: str,
     ) -> tuple[int, int, int]:
@@ -210,7 +213,10 @@ class JunitWriter:
             # `summary.tests` is typed as the base identifiable object (generated
             # model); the runtime elements are groups/metadata that implement
             # all_subtests.
-            subtests = test.all_subtests()  # type: ignore[attr-defined]
+            subtests = cast(
+                list[ActionTestSummaryIdentifiableObject],
+                test.all_subtests(),  # type: ignore[attr-defined]
+            )
             if self.collapse_retries:
                 subtests = self._collapse_retries(subtests)
 

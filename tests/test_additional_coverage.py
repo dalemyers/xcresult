@@ -113,7 +113,7 @@ def test_junit_writer_failure_no_location():
                 summary.failureSummaries = [failure]
                 mock_deserialize.return_value = summary
 
-                tests, failures, skipped = writer.generate_test_case(suite, test)
+                _tests, failures, _skipped = writer.generate_test_case(suite, test)
                 assert failures == 1
 
 
@@ -167,7 +167,7 @@ def test_junit_writer_with_attachments_and_identifierURL():
                 summary.failureSummaries = [failure]
                 mock_deserialize.return_value = summary
 
-                tests, failures, skipped = writer.generate_test_case(suite, test)
+                _tests, failures, _skipped = writer.generate_test_case(suite, test)
                 assert failures == 1
 
 
@@ -209,8 +209,6 @@ def test_xcresulttool_default_property_values():
 def test_xcresulttool_unsupported_property_warning():
     """Test that unsupported properties are logged as warnings."""
     # Test lines 66-68 in xcresulttool.py
-    import logging
-
     with mock.patch("logging.warning") as mock_warning:
         data = {
             "_type": {"_name": "ActionPlatformRecord"},
@@ -299,8 +297,6 @@ def test_model_comparison_operators():
 
 def test_xcresults_logging():
     """Test logging paths in xcresults."""
-    import logging
-
     test_data_path = os.path.join(
         os.path.dirname(__file__), "data", "TestSuccess.xcresult"
     )
