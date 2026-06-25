@@ -3,7 +3,7 @@
 # pylint: disable=c-extension-no-member
 
 import os
-from typing import cast
+from typing import Callable, cast
 from lxml import etree as ET
 
 from xcresult.model import (
@@ -19,6 +19,13 @@ from xcresult.xcresulttool import deserialize
 # lxml exposes its element type only via the underscore-prefixed name.
 Element = ET._Element  # pylint: disable=protected-access  # pyright: ignore[reportPrivateUsage]
 
+# A predicate used to decide whether a single test should appear in the report.
+# It receives a test leaf and must return ``True`` to keep it or ``False`` to
+# omit it entirely (it is then excluded from the emitted XML and from all
+# tests/failures/skipped counts). Both ``identifier`` (e.g. "Class/testMethod()")
+# and ``name`` are available on the supplied object for matching.
+TestFilter = Callable[[ActionTestSummaryIdentifiableObject], bool]
+
 
 class JunitWriter:
     """Junit writer for writing out the results of tests."""
@@ -29,6 +36,7 @@ class JunitWriter:
     test_class_prefix: str | None
     test_class_suffix: str | None
     collapse_retries: bool
+    test_filter: TestFilter | None
 
     # pylint: disable=too-many-positional-arguments
     def __init__(
@@ -39,6 +47,7 @@ class JunitWriter:
         test_class_prefix: str | None = None,
         test_class_suffix: str | None = None,
         collapse_retries: bool = False,
+        test_filter: TestFilter | None = None,
     ) -> None:
         self.results = results
         self.junit_path = junit_path
@@ -46,6 +55,7 @@ class JunitWriter:
         self.test_class_prefix = test_class_prefix
         self.test_class_suffix = test_class_suffix
         self.collapse_retries = collapse_retries
+        self.test_filter = test_filter
 
     # pylint: enable=too-many-positional-arguments
 
@@ -219,6 +229,12 @@ class JunitWriter:
             )
             if self.collapse_retries:
                 subtests = self._collapse_retries(subtests)
+
+            # Drop any tests the caller asked to exclude. Doing it here keeps the
+            # emitted XML and the suite/root counts consistent without a second
+            # pass over the document.
+            if self.test_filter is not None:
+                subtests = [subtest for subtest in subtests if self.test_filter(subtest)]
 
             for subtest in subtests:
                 if not isinstance(subtest, ActionTestMetadata):

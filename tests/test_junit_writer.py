@@ -572,3 +572,80 @@ def test_collapse_retries_keeps_anon_tests_separate():
         total_tests, _, _ = writer.generate_test_suite(root, summary, "Test Configuration")
 
         assert total_tests == 2, f"Un-identified leaves must not merge, got {total_tests}"
+
+
+def test_test_filter_excludes_matching_tests():
+    """A test_filter returning False drops the test from XML and from the counts."""
+    with tempfile.TemporaryDirectory() as temp_dir:
+        bundle = xcresult.Xcresults(
+            os.path.join(os.path.dirname(__file__), "data", "TestSuccess.xcresult")
+        )
+
+        # Exclude the two flaky leaves (failed flaky attempt + both fails() attempts).
+        def keep(test: "xcresult.ActionTestSummaryIdentifiableObject") -> bool:
+            return (test.name or "") not in {"flaky()", "fails()"}
+
+        writer = JunitWriter(bundle, os.path.join(temp_dir, "junit.xml"), test_filter=keep)
+
+        root = ET.Element("testsuites")
+        total_tests, total_failures, total_skipped = writer.generate_test_suite(
+            root, _retry_summary(), "Test Configuration"
+        )
+
+        # Started with 6 leaves (3 failures, 1 skip). Dropping flaky() (2 leaves)
+        # and fails() (2 leaves) leaves passes() + skips() = 2 tests, 0 failures.
+        assert total_tests == 2, f"Expected 2 remaining, got {total_tests}"
+        assert total_failures == 0, f"Expected 0 failures after filtering, got {total_failures}"
+        assert total_skipped == 1, f"Expected 1 skipped, got {total_skipped}"
+
+        assert not root.xpath("//testcase[@name='flaky()']")
+        assert not root.xpath("//testcase[@name='fails()']")
+        assert root.xpath("//testcase[@name='passes()']")
+
+
+def test_test_filter_none_keeps_everything():
+    """Omitting test_filter is equivalent to keeping every test (default behavior)."""
+    with tempfile.TemporaryDirectory() as temp_dir:
+        bundle = xcresult.Xcresults(
+            os.path.join(os.path.dirname(__file__), "data", "TestSuccess.xcresult")
+        )
+        writer = JunitWriter(bundle, os.path.join(temp_dir, "junit.xml"), test_filter=None)
+
+        root = ET.Element("testsuites")
+        total_tests, total_failures, total_skipped = writer.generate_test_suite(
+            root, _retry_summary(), "Test Configuration"
+        )
+
+        assert total_tests == 6, f"Expected all 6 leaves, got {total_tests}"
+        assert total_failures == 3, f"Expected 3 failures, got {total_failures}"
+        assert total_skipped == 1, f"Expected 1 skipped, got {total_skipped}"
+
+
+def test_test_filter_composes_with_collapse_retries():
+    """Filtering runs after collapsing, so excluded identifiers drop post-merge."""
+    with tempfile.TemporaryDirectory() as temp_dir:
+        bundle = xcresult.Xcresults(
+            os.path.join(os.path.dirname(__file__), "data", "TestSuccess.xcresult")
+        )
+
+        def keep(test: "xcresult.ActionTestSummaryIdentifiableObject") -> bool:
+            return (test.name or "") != "fails()"
+
+        writer = JunitWriter(
+            bundle,
+            os.path.join(temp_dir, "junit.xml"),
+            collapse_retries=True,
+            test_filter=keep,
+        )
+
+        root = ET.Element("testsuites")
+        total_tests, total_failures, total_skipped = writer.generate_test_suite(
+            root, _retry_summary(), "Test Configuration"
+        )
+
+        # Collapsed distinct tests: passes(), flaky() (flaky pass), fails(), skips() = 4.
+        # Dropping fails() leaves 3 tests, and the only failure is gone.
+        assert total_tests == 3, f"Expected 3 after collapse+filter, got {total_tests}"
+        assert total_failures == 0, f"Expected 0 failures, got {total_failures}"
+        assert total_skipped == 1, f"Expected 1 skipped, got {total_skipped}"
+        assert not root.xpath("//testcase[@name='fails()']")

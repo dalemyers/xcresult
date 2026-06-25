@@ -6,7 +6,7 @@ from typing import Any, cast
 from xcresult.exceptions import (
     MissingPropertyException,
 )
-from xcresult.junit_writer import JunitWriter
+from xcresult.junit_writer import JunitWriter, TestFilter
 from xcresult.model import ActionsInvocationRecord, ActionTestPlanRunSummaries
 from xcresult.xcresult_base import XcresultsBase
 from xcresult.xcresulttool import (
@@ -97,6 +97,7 @@ class Xcresults(XcresultsBase):
                         logging.info(f"\t\t\t\tExporting test: {test.identifier}")
                         export_action_test_summary_group(self.path, test, output_path, 5)
 
+    # pylint: disable=too-many-positional-arguments
     def write_junit(
         self,
         path: str,
@@ -104,6 +105,7 @@ class Xcresults(XcresultsBase):
         test_class_prefix: str | None = None,
         test_class_suffix: str | None = None,
         collapse_retries: bool = False,
+        test_filter: TestFilter | None = None,
     ) -> None:
         """Write the test results as a junit.
 
@@ -114,6 +116,11 @@ class Xcresults(XcresultsBase):
         :param collapse_retries: When True, collapse the multiple leaves a test
             produces under ``-retry-tests-on-failure`` into a single testcase (a
             pass if any attempt passed). Defaults to False (one testcase per attempt).
+        :param test_filter: Optional predicate called for each test. Return False
+            to omit that test entirely — it is excluded from the emitted XML and
+            from the tests/failures/skipped counts. Useful for dropping
+            intentionally-disabled (e.g. flaky) tests so they are not reported as
+            failures. Defaults to None (every test is written).
         """
         JunitWriter(
             self,
@@ -122,4 +129,7 @@ class Xcresults(XcresultsBase):
             test_class_prefix,
             test_class_suffix,
             collapse_retries,
+            test_filter,
         ).write()
+
+    # pylint: enable=too-many-positional-arguments
