@@ -59,57 +59,62 @@ class JunitWriter:
 
     # pylint: enable=too-many-positional-arguments
 
-    def _collapse_retries(
+    def _collapse_retry_indices(
         self,
         tests: list[ActionTestSummaryIdentifiableObject],
-    ) -> list[ActionTestSummaryIdentifiableObject]:
-        """Collapse retry attempts of the same test into one representative.
+    ) -> set[int]:
+        """Collapse retry attempts of the same test down to one representative.
 
         Under ``xcodebuild ... -retry-tests-on-failure`` a test that fails and is
         retried appears as multiple leaves sharing one ``identifier``. Emitting a
         ``<testcase>`` per attempt inflates the totals and duplicates the test.
         This keeps a single representative per identifier: a successful attempt if
         any passed (a flaky pass), otherwise a failing attempt, otherwise the
-        first attempt (e.g. all skipped). First-seen order is preserved.
+        first attempt (e.g. all skipped).
 
         Leaves without an identifier cannot be matched to their retries, so each
         is kept as its own entry.
 
-        :param tests: The flattened test leaves for a single suite.
+        Positions are returned rather than the leaves themselves so that the
+        caller can tell which of several equal (or even identical) leaves was
+        picked, without relying on object identity.
 
-        :returns: One representative test per distinct identifier.
+        :param tests: The flattened test leaves for a single testable summary.
+
+        :returns: The indices into ``tests`` of the leaves to keep, one per
+            distinct identifier.
         """
 
         order: list[str] = []
-        groups: dict[str, list[ActionTestSummaryIdentifiableObject]] = {}
+        attempts_by_key: dict[str, list[int]] = {}
 
-        for test in tests:
-            # Key un-identified leaves by object identity so they never merge.
-            key = test.identifier if test.identifier is not None else f"\x00{id(test)}"
-            if key not in groups:
-                groups[key] = []
+        for index, test in enumerate(tests):
+            # Key un-identified leaves by position so they never merge.
+            key = test.identifier if test.identifier is not None else f"\x00{index}"
+            if key not in attempts_by_key:
+                attempts_by_key[key] = []
                 order.append(key)
-            groups[key].append(test)
+            attempts_by_key[key].append(index)
 
-        representatives: list[ActionTestSummaryIdentifiableObject] = []
+        retained: set[int] = set()
         for key in order:
-            attempts = groups[key]
+            attempts = attempts_by_key[key]
             # A pass on any attempt wins (flaky pass); otherwise the first real
             # failure; otherwise the first attempt (covers an all-skipped group).
             chosen = next(
-                (t for t in attempts if getattr(t, "testStatus", None) == "Success"),
+                (i for i in attempts if getattr(tests[i], "testStatus", None) == "Success"),
                 None,
             )
             if chosen is None:
                 chosen = next(
-                    (t for t in attempts if getattr(t, "testStatus", None) != "Skipped"),
+                    (i for i in attempts if getattr(tests[i], "testStatus", None) != "Skipped"),
                     None,
                 )
             if chosen is None:
                 chosen = attempts[0]
-            representatives.append(chosen)
+            retained.add(chosen)
 
-        return representatives
+        return retained
 
     def generate_test_case(
         self,
@@ -198,13 +203,74 @@ class JunitWriter:
         summary: ActionTestableSummary,
         configuration_name: str,
     ) -> tuple[int, int, int]:
-        """Generate the test suite."""
+        """Generate the test suite.
+
+        A ``<testsuite>`` is emitted per top level group in the testable summary,
+        except for groups which contribute no test cases at all (either because
+        they were empty, or because collapsing and filtering removed every leaf).
+
+        :param root: The ``<testsuites>`` element to add the suites to
+        :param summary: The testable summary to generate the suites for
+        :param configuration_name: The name of the configuration the tests ran in
+
+        :returns: A tuple of the number of tests, failures and skipped tests
+        """
 
         total_tests = 0
         total_failures = 0
         total_skipped = 0
 
-        for test in summary.tests:
+        # Flatten every top level group up front. `summary.tests` is typed as the
+        # base identifiable object (generated model); the runtime elements are
+        # groups/metadata that implement all_subtests.
+        groups = list(summary.tests or [])
+        group_subtests = [
+            cast(
+                list[ActionTestSummaryIdentifiableObject],
+                group.all_subtests(),  # type: ignore[attr-defined]
+            )
+            for group in groups
+        ]
+
+        # Retries have to be collapsed across the whole testable summary rather
+        # than per top level group. `xcodebuild ... -retry-tests-on-failure`
+        # records the initial run and the retries in *separate* groups ("All
+        # tests" and "Selected tests"), and starts another group whenever the
+        # test host crashes. Collapsing per group would leave the stale first
+        # attempt behind, so a test that crashed once and then passed on every
+        # retry would still be reported as a failure. Survivors are tracked by
+        # their position in the flattened list, so each one stays in the group it
+        # actually ran in.
+        retained_indices: set[int] | None = None
+        if self.collapse_retries:
+            retained_indices = self._collapse_retry_indices(
+                [subtest for subtests in group_subtests for subtest in subtests]
+            )
+
+        group_start = 0
+
+        for test, group_leaves in zip(groups, group_subtests):
+            subtests = group_leaves
+            if retained_indices is not None:
+                subtests = [
+                    subtest
+                    for index, subtest in enumerate(group_leaves, start=group_start)
+                    if index in retained_indices
+                ]
+            group_start += len(group_leaves)
+
+            # Drop any tests the caller asked to exclude. Doing it here keeps the
+            # emitted XML and the suite/root counts consistent without a second
+            # pass over the document.
+            if self.test_filter is not None:
+                subtests = [subtest for subtest in subtests if self.test_filter(subtest)]
+
+            # Collapsing moves a test into the group its winning attempt ran in,
+            # which can empty out a retry group entirely. Emitting a suite with no
+            # test cases in it would just be noise, so skip it.
+            if not subtests:
+                continue
+
             suite = ET.SubElement(root, "testsuite")  # type: ignore[arg-type]
             suite.set("name", f"{summary.name}/{test.identifier}" or "Unknown Suite")
 
@@ -219,22 +285,6 @@ class JunitWriter:
             suite_total_tests = 0
             suite_total_failures = 0
             suite_total_skipped = 0
-
-            # `summary.tests` is typed as the base identifiable object (generated
-            # model); the runtime elements are groups/metadata that implement
-            # all_subtests.
-            subtests = cast(
-                list[ActionTestSummaryIdentifiableObject],
-                test.all_subtests(),  # type: ignore[attr-defined]
-            )
-            if self.collapse_retries:
-                subtests = self._collapse_retries(subtests)
-
-            # Drop any tests the caller asked to exclude. Doing it here keeps the
-            # emitted XML and the suite/root counts consistent without a second
-            # pass over the document.
-            if self.test_filter is not None:
-                subtests = [subtest for subtest in subtests if self.test_filter(subtest)]
 
             for subtest in subtests:
                 if not isinstance(subtest, ActionTestMetadata):

@@ -3,6 +3,7 @@
 import os
 import sys
 import tempfile
+from typing import cast
 from lxml import etree as ET
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
@@ -649,3 +650,186 @@ def test_test_filter_composes_with_collapse_retries():
         assert total_failures == 0, f"Expected 0 failures, got {total_failures}"
         assert total_skipped == 1, f"Expected 1 skipped, got {total_skipped}"
         assert not root.xpath("//testcase[@name='fails()']")
+
+
+def _retry_group_summary() -> "xcresult.ActionTestableSummary":
+    """A testable whose retries live in a *separate* top level group.
+
+    This mirrors what ``xcodebuild ... -retry-tests-on-failure`` actually
+    produces: the initial run lands in an "All tests" group and the retries land
+    in a "Selected tests" group. ``crashed()`` fails in the first group and
+    passes in the second, ``fails()`` fails in both, and ``passes()`` only ever
+    runs once.
+    """
+    summary = xcresult.ActionTestableSummary()
+    summary.name = "MockTarget"
+
+    all_tests = xcresult.ActionTestSummaryGroup()
+    all_tests.identifier = "All tests"
+    all_tests.subtests = [
+        _retry_meta("FlakySuite/crashed()", "crashed()", "Failed"),
+        _retry_meta("FlakySuite/fails()", "fails()", "Failed"),
+        _retry_meta("FlakySuite/passes()", "passes()", "Success"),
+    ]
+
+    selected_tests = xcresult.ActionTestSummaryGroup()
+    selected_tests.identifier = "Selected tests"
+    selected_tests.subtests = [
+        _retry_meta("FlakySuite/crashed()", "crashed()", "Success"),
+        _retry_meta("FlakySuite/fails()", "fails()", "Failed"),
+    ]
+
+    summary.tests = [all_tests, selected_tests]
+    return summary
+
+
+def test_collapse_retries_merges_attempts_across_groups():
+    """Retries in a different top level group must still collapse to one result."""
+    test_data_path = os.path.join(os.path.dirname(__file__), "data", "TestSuccess.xcresult")
+
+    with tempfile.TemporaryDirectory() as temp_dir:
+        bundle = xcresult.Xcresults(test_data_path)
+        writer = JunitWriter(bundle, os.path.join(temp_dir, "junit.xml"), collapse_retries=True)
+
+        root = ET.Element("testsuites")
+        total_tests, total_failures, total_skipped = writer.generate_test_suite(
+            root, _retry_group_summary(), "Test Configuration"
+        )
+
+        # 3 distinct tests: crashed() (passed on retry), fails(), passes().
+        assert total_tests == 3, f"Expected 3 distinct tests, got {total_tests}"
+        assert total_failures == 1, f"Expected 1 failure (fails()), got {total_failures}"
+        assert total_skipped == 0, f"Expected 0 skipped, got {total_skipped}"
+
+        # crashed() must be reported exactly once, as a pass.
+        crashed_cases = root.xpath("//testcase[@name='crashed()']")
+        assert len(crashed_cases) == 1, f"Expected 1 crashed() case, got {len(crashed_cases)}"
+        assert not crashed_cases[0].findall("failure"), "crashed() passed on retry"
+
+        # fails() never passed, so it stays a single failure.
+        fails_cases = root.xpath("//testcase[@name='fails()']")
+        assert len(fails_cases) == 1, f"Expected 1 fails() case, got {len(fails_cases)}"
+        assert fails_cases[0].findall("failure"), "fails() should remain a failure"
+
+
+def test_collapse_retries_keeps_group_placement() -> None:
+    """A collapsed test stays in the suite for the group it actually ran in."""
+    test_data_path = os.path.join(os.path.dirname(__file__), "data", "TestSuccess.xcresult")
+
+    with tempfile.TemporaryDirectory() as temp_dir:
+        bundle = xcresult.Xcresults(test_data_path)
+        writer = JunitWriter(bundle, os.path.join(temp_dir, "junit.xml"), collapse_retries=True)
+
+        root = ET.Element("testsuites")
+        writer.generate_test_suite(root, _retry_group_summary(), "Test Configuration")
+
+        suites = root.findall("testsuite")
+        assert len(suites) == 2, f"Expected a suite per group, got {len(suites)}"
+
+        first_names = [case.get("name") for case in suites[0].findall("testcase")]
+        second_names = [case.get("name") for case in suites[1].findall("testcase")]
+
+        # The winning crashed() attempt ran in "Selected tests", the others in
+        # "All tests". Suite level counts must match what each suite emitted.
+        assert first_names == ["fails()", "passes()"], first_names
+        assert second_names == ["crashed()"], second_names
+        assert suites[0].get("tests") == "2"
+        assert suites[0].get("failures") == "1"
+        assert suites[1].get("tests") == "1"
+        assert suites[1].get("failures") == "0"
+
+
+def test_no_collapse_keeps_cross_group_attempts() -> None:
+    """Without collapsing, every attempt in every group is still reported."""
+    test_data_path = os.path.join(os.path.dirname(__file__), "data", "TestSuccess.xcresult")
+
+    with tempfile.TemporaryDirectory() as temp_dir:
+        bundle = xcresult.Xcresults(test_data_path)
+        writer = JunitWriter(bundle, os.path.join(temp_dir, "junit.xml"))
+
+        root = ET.Element("testsuites")
+        total_tests, total_failures, _ = writer.generate_test_suite(
+            root, _retry_group_summary(), "Test Configuration"
+        )
+
+        assert total_tests == 5, f"Expected every attempt, got {total_tests}"
+        assert total_failures == 3, f"Expected 3 failures, got {total_failures}"
+
+
+def test_collapse_retries_drops_emptied_group() -> None:
+    """A group left with no tests after collapsing is not emitted at all."""
+    test_data_path = os.path.join(os.path.dirname(__file__), "data", "TestSuccess.xcresult")
+
+    with tempfile.TemporaryDirectory() as temp_dir:
+        bundle = xcresult.Xcresults(test_data_path)
+        writer = JunitWriter(bundle, os.path.join(temp_dir, "junit.xml"), collapse_retries=True)
+
+        # Every attempt fails, so the representative is the first attempt and the
+        # retry group contributes nothing.
+        summary = xcresult.ActionTestableSummary()
+        summary.name = "MockTarget"
+        all_tests = xcresult.ActionTestSummaryGroup()
+        all_tests.identifier = "All tests"
+        all_tests.subtests = [_retry_meta("FlakySuite/fails()", "fails()", "Failed")]
+        selected_tests = xcresult.ActionTestSummaryGroup()
+        selected_tests.identifier = "Selected tests"
+        selected_tests.subtests = [_retry_meta("FlakySuite/fails()", "fails()", "Failed")]
+        summary.tests = [all_tests, selected_tests]
+
+        root = ET.Element("testsuites")
+        total_tests, total_failures, _ = writer.generate_test_suite(
+            root, summary, "Test Configuration"
+        )
+
+        assert total_tests == 1, f"Expected 1 collapsed test, got {total_tests}"
+        assert total_failures == 1, f"Expected 1 failure, got {total_failures}"
+
+        suites = root.findall("testsuite")
+        assert len(suites) == 1, f"The emptied retry group must be dropped, got {len(suites)}"
+        assert suites[0].get("name") == "MockTarget/All tests"
+
+
+def test_empty_group_is_not_emitted() -> None:
+    """A group that never had any tests in it produces no suite either."""
+    test_data_path = os.path.join(os.path.dirname(__file__), "data", "TestSuccess.xcresult")
+
+    with tempfile.TemporaryDirectory() as temp_dir:
+        bundle = xcresult.Xcresults(test_data_path)
+        writer = JunitWriter(bundle, os.path.join(temp_dir, "junit.xml"))
+
+        summary = xcresult.ActionTestableSummary()
+        summary.name = "MockTarget"
+        empty = xcresult.ActionTestSummaryGroup()
+        empty.identifier = "Empty"
+        empty.subtests = []
+        populated = xcresult.ActionTestSummaryGroup()
+        populated.identifier = "Suite"
+        populated.subtests = [_retry_meta("Suite/passes()", "passes()", "Success")]
+        summary.tests = [empty, populated]
+
+        root = ET.Element("testsuites")
+        total_tests, _, _ = writer.generate_test_suite(root, summary, "Test Configuration")
+
+        assert total_tests == 1, f"Expected 1 test, got {total_tests}"
+        suites = root.findall("testsuite")
+        assert len(suites) == 1, f"Expected the empty group to be skipped, got {len(suites)}"
+        assert suites[0].get("name") == "MockTarget/Suite"
+
+
+def test_generate_test_suite_handles_missing_tests() -> None:
+    """A testable summary with no tests at all is handled without error."""
+    test_data_path = os.path.join(os.path.dirname(__file__), "data", "TestSuccess.xcresult")
+
+    with tempfile.TemporaryDirectory() as temp_dir:
+        bundle = xcresult.Xcresults(test_data_path)
+        writer = JunitWriter(bundle, os.path.join(temp_dir, "junit.xml"))
+
+        summary = xcresult.ActionTestableSummary()
+        summary.name = "MockTarget"
+        # `deserialize` sets absent list properties to None even though the
+        # generated model types them as a list, so this is a real runtime state.
+        summary.tests = cast(list[xcresult.ActionTestSummaryIdentifiableObject], None)
+
+        root = ET.Element("testsuites")
+        assert writer.generate_test_suite(root, summary, "Test Configuration") == (0, 0, 0)
+        assert not root.findall("testsuite")

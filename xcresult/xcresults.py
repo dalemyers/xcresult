@@ -115,7 +115,12 @@ class Xcresults(XcresultsBase):
         :param test_class_suffix: Optional suffix appended to every test's classname.
         :param collapse_retries: When True, collapse the multiple leaves a test
             produces under ``-retry-tests-on-failure`` into a single testcase (a
-            pass if any attempt passed). Defaults to False (one testcase per attempt).
+            pass if any attempt passed). Attempts are matched across every top
+            level group of a testable, since xcodebuild records the initial run
+            and the retries in separate groups. The surviving testcase is written
+            to the suite for the group it actually ran in, and a group left with
+            no testcases is not written at all. Defaults to False (one testcase
+            per attempt).
         :param test_filter: Optional predicate called for each test. Return False
             to omit that test entirely — it is excluded from the emitted XML and
             from the tests/failures/skipped counts. Useful for dropping
