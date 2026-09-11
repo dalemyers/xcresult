@@ -14,9 +14,7 @@ from xcresult.exceptions import MissingPropertyException
 
 def test_xcresults_init_absolute_path():
     """Test Xcresults initialization with absolute path."""
-    test_data_path = os.path.join(
-        os.path.dirname(__file__), "data", "TestSuccess.xcresult"
-    )
+    test_data_path = os.path.join(os.path.dirname(__file__), "data", "TestSuccess.xcresult")
     bundle = xcresult.Xcresults(test_data_path)
     assert bundle.path == test_data_path
 
@@ -24,9 +22,7 @@ def test_xcresults_init_absolute_path():
 def test_xcresults_init_relative_path():
     """Test Xcresults initialization with relative path."""
     cwd = os.getcwd()
-    test_data_path = os.path.join(
-        os.path.dirname(__file__), "data", "TestSuccess.xcresult"
-    )
+    test_data_path = os.path.join(os.path.dirname(__file__), "data", "TestSuccess.xcresult")
     rel_path = os.path.relpath(test_data_path, cwd)
     bundle = xcresult.Xcresults(rel_path)
     assert bundle.path == os.path.join(cwd, rel_path)
@@ -34,9 +30,7 @@ def test_xcresults_init_relative_path():
 
 def test_actions_invocation_record_caching():
     """Test that actions invocation record is cached."""
-    test_data_path = os.path.join(
-        os.path.dirname(__file__), "data", "TestSuccess.xcresult"
-    )
+    test_data_path = os.path.join(os.path.dirname(__file__), "data", "TestSuccess.xcresult")
     bundle = xcresult.Xcresults(test_data_path)
 
     # First call
@@ -49,9 +43,7 @@ def test_actions_invocation_record_caching():
 
 def test_get():
     """Test the get method."""
-    test_data_path = os.path.join(
-        os.path.dirname(__file__), "data", "TestSuccess.xcresult"
-    )
+    test_data_path = os.path.join(os.path.dirname(__file__), "data", "TestSuccess.xcresult")
     bundle = xcresult.Xcresults(test_data_path)
 
     # Get an identifier from the bundle
@@ -65,9 +57,7 @@ def test_get():
 
 def test_export_attachment():
     """Test the export_attachment method."""
-    test_data_path = os.path.join(
-        os.path.dirname(__file__), "data", "TestFailure.xcresult"
-    )
+    test_data_path = os.path.join(os.path.dirname(__file__), "data", "TestFailure.xcresult")
 
     with tempfile.TemporaryDirectory() as temp_dir:
         bundle = xcresult.Xcresults(test_data_path)
@@ -88,13 +78,8 @@ def test_export_attachment():
                     testable = summaries.summaries[0].testableSummaries[0]
                     all_tests = testable.all_tests()
                     for test in all_tests:
-                        if (
-                            isinstance(test, xcresult.ActionTestMetadata)
-                            and test.summaryRef
-                        ):
-                            summary = get_action_test_summary(
-                                test_data_path, test.summaryRef.id
-                            )
+                        if isinstance(test, xcresult.ActionTestMetadata) and test.summaryRef:
+                            summary = get_action_test_summary(test_data_path, test.summaryRef.id)
                             if summary.activitySummaries:
                                 for activity in summary.activitySummaries:
                                     if activity.attachments:
@@ -114,9 +99,7 @@ def test_export_attachment():
 
 def test_export_test_attachments_no_actions():
     """Test export_test_attachments with no actions."""
-    test_data_path = os.path.join(
-        os.path.dirname(__file__), "data", "TestSuccess.xcresult"
-    )
+    test_data_path = os.path.join(os.path.dirname(__file__), "data", "TestSuccess.xcresult")
 
     with tempfile.TemporaryDirectory() as temp_dir:
         bundle = xcresult.Xcresults(test_data_path)
@@ -133,9 +116,7 @@ def test_export_test_attachments_no_actions():
 
 def test_export_test_attachments_no_test_ref():
     """Test export_test_attachments with no test ref."""
-    test_data_path = os.path.join(
-        os.path.dirname(__file__), "data", "TestSuccess.xcresult"
-    )
+    test_data_path = os.path.join(os.path.dirname(__file__), "data", "TestSuccess.xcresult")
 
     with tempfile.TemporaryDirectory() as temp_dir:
         bundle = xcresult.Xcresults(test_data_path)
@@ -146,9 +127,7 @@ def test_export_test_attachments_no_test_ref():
 
 def test_write_junit():
     """Test writing JUnit output."""
-    test_data_path = os.path.join(
-        os.path.dirname(__file__), "data", "TestSuccess.xcresult"
-    )
+    test_data_path = os.path.join(os.path.dirname(__file__), "data", "TestSuccess.xcresult")
 
     with tempfile.TemporaryDirectory() as temp_dir:
         output_path = os.path.join(temp_dir, "junit.xml")
@@ -159,9 +138,7 @@ def test_write_junit():
 
 def test_write_junit_with_attachments():
     """Test writing JUnit output with attachments."""
-    test_data_path = os.path.join(
-        os.path.dirname(__file__), "data", "TestSuccess.xcresult"
-    )
+    test_data_path = os.path.join(os.path.dirname(__file__), "data", "TestSuccess.xcresult")
 
     with tempfile.TemporaryDirectory() as temp_dir:
         output_path = os.path.join(temp_dir, "junit.xml")
@@ -173,14 +150,10 @@ def test_write_junit_with_attachments():
 
 def test_write_junit_with_prefix_suffix():
     """Test writing JUnit output with test class prefix and suffix."""
-    test_data_path = os.path.join(
-        os.path.dirname(__file__), "data", "TestSuccess.xcresult"
-    )
+    test_data_path = os.path.join(os.path.dirname(__file__), "data", "TestSuccess.xcresult")
 
     with tempfile.TemporaryDirectory() as temp_dir:
         output_path = os.path.join(temp_dir, "junit.xml")
         bundle = xcresult.Xcresults(test_data_path)
-        bundle.write_junit(
-            output_path, test_class_prefix="prefix", test_class_suffix="suffix"
-        )
+        bundle.write_junit(output_path, test_class_prefix="prefix", test_class_suffix="suffix")
         assert os.path.exists(output_path)

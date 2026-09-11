@@ -17,18 +17,12 @@ def test_export_subprocess_call():
     Test the _export function that calls subprocess.
     This covers lines 151-166 in xcresulttool.py.
     """
-    test_data_path = os.path.join(
-        os.path.dirname(__file__), "data", "TestSuccess.xcresult"
-    )
+    test_data_path = os.path.join(os.path.dirname(__file__), "data", "TestSuccess.xcresult")
 
     # Mock subprocess.run to avoid actually calling xcrun
-    with mock.patch('xcresult.xcresulttool.subprocess.run') as mock_run:
+    with mock.patch("xcresult.xcresulttool.subprocess.run") as mock_run:
         # Configure the mock to simulate successful execution
-        mock_run.return_value = mock.Mock(
-            returncode=0,
-            stdout=b'',
-            stderr=b''
-        )
+        mock_run.return_value = mock.Mock(returncode=0, stdout=b"", stderr=b"")
 
         # Call _export which should trigger lines 151-166
         _export(test_data_path, "fake-id", "file", "/tmp/output.txt")
@@ -54,19 +48,17 @@ def test_export_subprocess_call():
         assert "--legacy" in command
 
         # Verify check=True was passed
-        assert call_args[1]['check'] is True
-        assert 'stdout' in call_args[1]
-        assert 'stderr' in call_args[1]
+        assert call_args[1]["check"] is True
+        assert "stdout" in call_args[1]
+        assert "stderr" in call_args[1]
 
 
 def test_export_subprocess_with_directory_type():
     """Test _export with directory type."""
-    test_data_path = os.path.join(
-        os.path.dirname(__file__), "data", "TestSuccess.xcresult"
-    )
+    test_data_path = os.path.join(os.path.dirname(__file__), "data", "TestSuccess.xcresult")
 
-    with mock.patch('xcresult.xcresulttool.subprocess.run') as mock_run:
-        mock_run.return_value = mock.Mock(returncode=0, stdout=b'', stderr=b'')
+    with mock.patch("xcresult.xcresulttool.subprocess.run") as mock_run:
+        mock_run.return_value = mock.Mock(returncode=0, stdout=b"", stderr=b"")
 
         # Call with directory type
         _export(test_data_path, "test-id", "directory", "/tmp/output_dir")
@@ -81,16 +73,12 @@ def test_export_subprocess_with_directory_type():
 
 def test_export_subprocess_error_handling():
     """Test that _export propagates subprocess errors."""
-    test_data_path = os.path.join(
-        os.path.dirname(__file__), "data", "TestSuccess.xcresult"
-    )
+    test_data_path = os.path.join(os.path.dirname(__file__), "data", "TestSuccess.xcresult")
 
-    with mock.patch('xcresult.xcresulttool.subprocess.run') as mock_run:
+    with mock.patch("xcresult.xcresulttool.subprocess.run") as mock_run:
         # Simulate subprocess failure
         mock_run.side_effect = subprocess.CalledProcessError(
-            returncode=1,
-            cmd=['xcrun', 'xcresulttool'],
-            stderr=b'xcresulttool error'
+            returncode=1, cmd=["xcrun", "xcresulttool"], stderr=b"xcresulttool error"
         )
 
         # Should raise the CalledProcessError

@@ -23,9 +23,7 @@ def test_issue_type_enum():
 
 def test_export_success():
     """Test successful export command."""
-    test_data_path = os.path.join(
-        os.path.dirname(__file__), "data", "TestSuccess.xcresult"
-    )
+    test_data_path = os.path.join(os.path.dirname(__file__), "data", "TestSuccess.xcresult")
 
     with tempfile.TemporaryDirectory() as temp_dir:
         with mock.patch(
@@ -71,9 +69,7 @@ def test_export_bundle_not_directory():
 
 def test_export_missing_output_path():
     """Test export with missing output path."""
-    test_data_path = os.path.join(
-        os.path.dirname(__file__), "data", "TestSuccess.xcresult"
-    )
+    test_data_path = os.path.join(os.path.dirname(__file__), "data", "TestSuccess.xcresult")
 
     with mock.patch(
         "sys.argv",
@@ -92,9 +88,7 @@ def test_export_missing_output_path():
 
 def test_export_exception():
     """Test export with exception."""
-    test_data_path = os.path.join(
-        os.path.dirname(__file__), "data", "TestSuccess.xcresult"
-    )
+    test_data_path = os.path.join(os.path.dirname(__file__), "data", "TestSuccess.xcresult")
 
     with tempfile.TemporaryDirectory() as temp_dir:
         with mock.patch(
@@ -111,9 +105,7 @@ def test_export_exception():
 
 def test_junit_success():
     """Test successful junit command."""
-    test_data_path = os.path.join(
-        os.path.dirname(__file__), "data", "TestSuccess.xcresult"
-    )
+    test_data_path = os.path.join(os.path.dirname(__file__), "data", "TestSuccess.xcresult")
 
     with tempfile.TemporaryDirectory() as temp_dir:
         output_path = os.path.join(temp_dir, "junit.xml")
@@ -128,9 +120,7 @@ def test_junit_success():
 
 def test_junit_with_attachments():
     """Test junit command with attachments export."""
-    test_data_path = os.path.join(
-        os.path.dirname(__file__), "data", "TestSuccess.xcresult"
-    )
+    test_data_path = os.path.join(os.path.dirname(__file__), "data", "TestSuccess.xcresult")
 
     with tempfile.TemporaryDirectory() as temp_dir:
         output_path = os.path.join(temp_dir, "junit.xml")
@@ -156,9 +146,7 @@ def test_junit_with_attachments():
 
 def test_junit_existing_output():
     """Test junit command with existing output file."""
-    test_data_path = os.path.join(
-        os.path.dirname(__file__), "data", "TestSuccess.xcresult"
-    )
+    test_data_path = os.path.join(os.path.dirname(__file__), "data", "TestSuccess.xcresult")
 
     with tempfile.TemporaryDirectory() as temp_dir:
         output_path = os.path.join(temp_dir, "junit.xml")
@@ -175,9 +163,7 @@ def test_junit_existing_output():
 
 def test_junit_exception():
     """Test junit command with exception."""
-    test_data_path = os.path.join(
-        os.path.dirname(__file__), "data", "TestSuccess.xcresult"
-    )
+    test_data_path = os.path.join(os.path.dirname(__file__), "data", "TestSuccess.xcresult")
 
     with tempfile.TemporaryDirectory() as temp_dir:
         output_path = os.path.join(temp_dir, "junit.xml")
@@ -195,9 +181,7 @@ def test_junit_exception():
 
 def test_check_issues_no_issues():
     """Test check-issues with no issues."""
-    test_data_path = os.path.join(
-        os.path.dirname(__file__), "data", "TestSuccess.xcresult"
-    )
+    test_data_path = os.path.join(os.path.dirname(__file__), "data", "TestSuccess.xcresult")
 
     with mock.patch(
         "sys.argv",
@@ -209,9 +193,7 @@ def test_check_issues_no_issues():
 
 def test_check_issues_with_failures():
     """Test check-issues with errors and warnings."""
-    test_data_path = os.path.join(
-        os.path.dirname(__file__), "data", "BaseProjectFailure.xcresult"
-    )
+    test_data_path = os.path.join(os.path.dirname(__file__), "data", "BaseProjectFailure.xcresult")
 
     with mock.patch(
         "sys.argv",
@@ -223,9 +205,7 @@ def test_check_issues_with_failures():
 
 def test_check_issues_specific_type():
     """Test check-issues with specific issue type."""
-    test_data_path = os.path.join(
-        os.path.dirname(__file__), "data", "BaseProjectFailure.xcresult"
-    )
+    test_data_path = os.path.join(os.path.dirname(__file__), "data", "BaseProjectFailure.xcresult")
 
     with mock.patch(
         "sys.argv",
@@ -244,9 +224,7 @@ def test_check_issues_specific_type():
 
 def test_check_issues_multiple_types():
     """Test check-issues with multiple issue types."""
-    test_data_path = os.path.join(
-        os.path.dirname(__file__), "data", "BaseProjectFailure.xcresult"
-    )
+    test_data_path = os.path.join(os.path.dirname(__file__), "data", "BaseProjectFailure.xcresult")
 
     with mock.patch(
         "sys.argv",
@@ -266,9 +244,7 @@ def test_check_issues_multiple_types():
 
 def test_check_issues_no_failures():
     """Test check-issues looking for specific type that doesn't exist."""
-    test_data_path = os.path.join(
-        os.path.dirname(__file__), "data", "TestSuccess.xcresult"
-    )
+    test_data_path = os.path.join(os.path.dirname(__file__), "data", "TestSuccess.xcresult")
 
     with mock.patch(
         "sys.argv",
@@ -287,9 +263,7 @@ def test_check_issues_no_failures():
 
 def test_no_subcommand():
     """Test with no subcommand."""
-    test_data_path = os.path.join(
-        os.path.dirname(__file__), "data", "TestSuccess.xcresult"
-    )
+    test_data_path = os.path.join(os.path.dirname(__file__), "data", "TestSuccess.xcresult")
 
     with mock.patch(
         "sys.argv",
@@ -301,18 +275,14 @@ def test_no_subcommand():
 
 def test_unrecognized_command():
     """Test with unrecognized command."""
-    test_data_path = os.path.join(
-        os.path.dirname(__file__), "data", "TestSuccess.xcresult"
-    )
+    test_data_path = os.path.join(os.path.dirname(__file__), "data", "TestSuccess.xcresult")
 
     # Mock the args to have an invalid subcommand
     with mock.patch(
         "sys.argv",
         ["xcresult", "-b", test_data_path, "export"],
     ):
-        with mock.patch(
-            "argparse.ArgumentParser.parse_args"
-        ) as mock_parse_args:
+        with mock.patch("argparse.ArgumentParser.parse_args") as mock_parse_args:
             mock_args = mock.Mock()
             mock_args.subcommand = "invalid"
             mock_args.bundle_path = test_data_path

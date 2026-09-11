@@ -134,5 +134,3 @@ def test_type_definition_all_members():
 
     members = typedef._members()
     assert "String" in members
-
-

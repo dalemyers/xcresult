@@ -15,9 +15,7 @@ from xcresult.xcresulttool import deserialize
 
 def test_xcresults_action_without_tests_ref():
     """Test export_test_attachments when action has no testsRef."""
-    test_data_path = os.path.join(
-        os.path.dirname(__file__), "data", "TestSuccess.xcresult"
-    )
+    test_data_path = os.path.join(os.path.dirname(__file__), "data", "TestSuccess.xcresult")
 
     with tempfile.TemporaryDirectory() as temp_dir:
         bundle = xcresult.Xcresults(test_data_path)
@@ -45,9 +43,7 @@ def test_xcresults_action_without_tests_ref():
 
 def test_command_line_check_issues_empty_summaries_list():
     """Test check-issues when summaries list exists but is empty."""
-    test_data_path = os.path.join(
-        os.path.dirname(__file__), "data", "TestSuccess.xcresult"
-    )
+    test_data_path = os.path.join(os.path.dirname(__file__), "data", "TestSuccess.xcresult")
 
     # This should hit lines 78-80 when len(summaries) == 0
     with mock.patch(
@@ -94,15 +90,11 @@ def test_xcresulttool_deserialize_missing_float_property():
     assert result.unixTimeInterval == 0.0  # Default float value from lines 85-86
 
 
-
-
 def test_xcresulttool_export_attachment_makedirs():
     """Test export_attachment creates directories."""
     from xcresult.xcresulttool import export_attachment
 
-    test_data_path = os.path.join(
-        os.path.dirname(__file__), "data", "TestSuccess.xcresult"
-    )
+    test_data_path = os.path.join(os.path.dirname(__file__), "data", "TestSuccess.xcresult")
 
     with tempfile.TemporaryDirectory() as temp_dir:
         # Create a nested path that needs makedirs (line 221)
@@ -118,9 +110,7 @@ def test_xcresulttool_export_non_action_test_metadata():
     """Test export_action_test_summary_group with ActionTestSummary (not ActionTestMetadata)."""
     from xcresult.xcresulttool import export_action_test_summary_group
 
-    test_data_path = os.path.join(
-        os.path.dirname(__file__), "data", "TestSuccess.xcresult"
-    )
+    test_data_path = os.path.join(os.path.dirname(__file__), "data", "TestSuccess.xcresult")
 
     with tempfile.TemporaryDirectory() as temp_dir:
         # Use ActionTestSummary which is ActionTestSummaryIdentifiableObject
@@ -140,9 +130,7 @@ def test_xcresulttool_export_attachment_no_payload_ref_activity():
     """Test exporting activity attachment without payloadRef."""
     from xcresult.xcresulttool import export_action_test_summary_group
 
-    test_data_path = os.path.join(
-        os.path.dirname(__file__), "data", "TestSuccess.xcresult"
-    )
+    test_data_path = os.path.join(os.path.dirname(__file__), "data", "TestSuccess.xcresult")
 
     with tempfile.TemporaryDirectory() as temp_dir:
         test = xcresult.ActionTestMetadata()
@@ -177,9 +165,7 @@ def test_xcresulttool_export_failure_attachment_no_payload_ref():
     """Test exporting failure attachment without payloadRef."""
     from xcresult.xcresulttool import export_action_test_summary_group
 
-    test_data_path = os.path.join(
-        os.path.dirname(__file__), "data", "TestSuccess.xcresult"
-    )
+    test_data_path = os.path.join(os.path.dirname(__file__), "data", "TestSuccess.xcresult")
 
     with tempfile.TemporaryDirectory() as temp_dir:
         test = xcresult.ActionTestMetadata()
@@ -213,9 +199,7 @@ def test_xcresulttool_export_failure_attachment_no_filename():
     """Test exporting failure attachment without filename."""
     from xcresult.xcresulttool import export_action_test_summary_group
 
-    test_data_path = os.path.join(
-        os.path.dirname(__file__), "data", "TestSuccess.xcresult"
-    )
+    test_data_path = os.path.join(os.path.dirname(__file__), "data", "TestSuccess.xcresult")
 
     with tempfile.TemporaryDirectory() as temp_dir:
         test = xcresult.ActionTestMetadata()
@@ -251,9 +235,7 @@ def test_xcresulttool_export_failure_attachment_file_exists():
     """Test exporting failure attachment when output file already exists."""
     from xcresult.xcresulttool import export_action_test_summary_group
 
-    test_data_path = os.path.join(
-        os.path.dirname(__file__), "data", "TestSuccess.xcresult"
-    )
+    test_data_path = os.path.join(os.path.dirname(__file__), "data", "TestSuccess.xcresult")
 
     with tempfile.TemporaryDirectory() as temp_dir:
         test = xcresult.ActionTestMetadata()

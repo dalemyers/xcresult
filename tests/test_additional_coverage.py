@@ -26,9 +26,7 @@ def test_command_line_import_error():
 
 def test_command_line_check_issues_with_location():
     """Test check-issues with location information."""
-    test_data_path = os.path.join(
-        os.path.dirname(__file__), "data", "BaseProjectFailure.xcresult"
-    )
+    test_data_path = os.path.join(os.path.dirname(__file__), "data", "BaseProjectFailure.xcresult")
 
     # Run check-issues to get location printing (lines 84-86)
     with mock.patch(
@@ -43,9 +41,7 @@ def test_command_line_check_issues_with_location():
 
 def test_command_line_check_issues_empty_summaries():
     """Test check-issues with empty summaries."""
-    test_data_path = os.path.join(
-        os.path.dirname(__file__), "data", "TestSuccess.xcresult"
-    )
+    test_data_path = os.path.join(os.path.dirname(__file__), "data", "TestSuccess.xcresult")
 
     # Test line 78-80 by having no issues
     with mock.patch(
@@ -76,9 +72,7 @@ def test_command_line_main():
 
 def test_junit_writer_failure_no_location():
     """Test JUnit writer with failure but no source code location."""
-    test_data_path = os.path.join(
-        os.path.dirname(__file__), "data", "TestSuccess.xcresult"
-    )
+    test_data_path = os.path.join(os.path.dirname(__file__), "data", "TestSuccess.xcresult")
 
     with tempfile.TemporaryDirectory() as temp_dir:
         from xcresult.junit_writer import JunitWriter
@@ -103,9 +97,7 @@ def test_junit_writer_failure_no_location():
         test.summaryRef.id = "fake-id"
 
         with mock.patch.object(writer.results, "get"):
-            with mock.patch(
-                "xcresult.junit_writer.deserialize"
-            ) as mock_deserialize:
+            with mock.patch("xcresult.junit_writer.deserialize") as mock_deserialize:
                 summary = xcresult.ActionTestSummary()
                 failure = xcresult.ActionTestFailureSummary()
                 failure.message = "Test failed"
@@ -119,9 +111,7 @@ def test_junit_writer_failure_no_location():
 
 def test_junit_writer_with_attachments_and_identifierURL():
     """Test JUnit writer with attachments when identifierURL exists."""
-    test_data_path = os.path.join(
-        os.path.dirname(__file__), "data", "TestSuccess.xcresult"
-    )
+    test_data_path = os.path.join(os.path.dirname(__file__), "data", "TestSuccess.xcresult")
 
     with tempfile.TemporaryDirectory() as temp_dir:
         from xcresult.junit_writer import JunitWriter
@@ -147,9 +137,7 @@ def test_junit_writer_with_attachments_and_identifierURL():
         test.summaryRef.id = "fake-id"
 
         # Create the attachment directory
-        test_attachments_path = os.path.join(
-            attachments_path, "TestClass/testMethod"
-        )
+        test_attachments_path = os.path.join(attachments_path, "TestClass/testMethod")
         os.makedirs(test_attachments_path, exist_ok=True)
 
         # Create a fake attachment file
@@ -157,9 +145,7 @@ def test_junit_writer_with_attachments_and_identifierURL():
             f.write("fake")
 
         with mock.patch.object(writer.results, "get"):
-            with mock.patch(
-                "xcresult.junit_writer.deserialize"
-            ) as mock_deserialize:
+            with mock.patch("xcresult.junit_writer.deserialize") as mock_deserialize:
                 summary = xcresult.ActionTestSummary()
                 failure = xcresult.ActionTestFailureSummary()
                 failure.message = "Test failed"
@@ -173,9 +159,7 @@ def test_junit_writer_with_attachments_and_identifierURL():
 
 def test_xcresults_missing_property_exceptions():
     """Test MissingPropertyException paths."""
-    test_data_path = os.path.join(
-        os.path.dirname(__file__), "data", "TestSuccess.xcresult"
-    )
+    test_data_path = os.path.join(os.path.dirname(__file__), "data", "TestSuccess.xcresult")
 
     with tempfile.TemporaryDirectory() as temp_dir:
         bundle = xcresult.Xcresults(test_data_path)
@@ -297,9 +281,7 @@ def test_model_comparison_operators():
 
 def test_xcresults_logging():
     """Test logging paths in xcresults."""
-    test_data_path = os.path.join(
-        os.path.dirname(__file__), "data", "TestSuccess.xcresult"
-    )
+    test_data_path = os.path.join(os.path.dirname(__file__), "data", "TestSuccess.xcresult")
 
     with tempfile.TemporaryDirectory() as temp_dir:
         bundle = xcresult.Xcresults(test_data_path)

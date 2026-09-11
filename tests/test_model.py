@@ -232,9 +232,7 @@ def test_issue_summary():
 
 def test_action_testable_summary_all_tests():
     """Test ActionTestableSummary all_tests method."""
-    test_data_path = os.path.join(
-        os.path.dirname(__file__), "data", "TestSuccess.xcresult"
-    )
+    test_data_path = os.path.join(os.path.dirname(__file__), "data", "TestSuccess.xcresult")
     bundle = xcresult.Xcresults(test_data_path)
 
     if bundle.actions_invocation_record.actions:
@@ -242,9 +240,7 @@ def test_action_testable_summary_all_tests():
         if action.actionResult.testsRef:
             from xcresult.xcresulttool import get_test_plan_run_summaries
 
-            summaries = get_test_plan_run_summaries(
-                test_data_path, action.actionResult.testsRef.id
-            )
+            summaries = get_test_plan_run_summaries(test_data_path, action.actionResult.testsRef.id)
             if summaries.summaries and summaries.summaries[0].testableSummaries:
                 testable = summaries.summaries[0].testableSummaries[0]
                 all_tests = testable.all_tests()

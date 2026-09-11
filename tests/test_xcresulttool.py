@@ -117,18 +117,14 @@ def test_deserialize_with_unsupported_property():
 
 def test_get_actions_invocation_record():
     """Test getting the actions invocation record."""
-    test_data_path = os.path.join(
-        os.path.dirname(__file__), "data", "TestSuccess.xcresult"
-    )
+    test_data_path = os.path.join(os.path.dirname(__file__), "data", "TestSuccess.xcresult")
     result = get_actions_invocation_record(test_data_path)
     assert isinstance(result, xcresult.ActionsInvocationRecord)
 
 
 def test_get_with_identifier():
     """Test get with an identifier."""
-    test_data_path = os.path.join(
-        os.path.dirname(__file__), "data", "TestSuccess.xcresult"
-    )
+    test_data_path = os.path.join(os.path.dirname(__file__), "data", "TestSuccess.xcresult")
     # First get the base record to get an identifier
     base = get_actions_invocation_record(test_data_path)
     if base.actions and base.actions[0].actionResult.testsRef:
@@ -139,9 +135,7 @@ def test_get_with_identifier():
 
 def test_get_test_plan_run_summaries():
     """Test getting test plan run summaries."""
-    test_data_path = os.path.join(
-        os.path.dirname(__file__), "data", "TestSuccess.xcresult"
-    )
+    test_data_path = os.path.join(os.path.dirname(__file__), "data", "TestSuccess.xcresult")
     base = get_actions_invocation_record(test_data_path)
     if base.actions and base.actions[0].actionResult.testsRef:
         test_id = base.actions[0].actionResult.testsRef.id
@@ -151,38 +145,27 @@ def test_get_test_plan_run_summaries():
 
 def test_get_action_test_summary():
     """Test getting an action test summary."""
-    test_data_path = os.path.join(
-        os.path.dirname(__file__), "data", "TestFailure.xcresult"
-    )
+    test_data_path = os.path.join(os.path.dirname(__file__), "data", "TestFailure.xcresult")
     bundle = xcresult.Xcresults(test_data_path)
 
     # Navigate to get a test summary ref
     if bundle.actions_invocation_record.actions:
         action = bundle.actions_invocation_record.actions[0]
         if action.actionResult.testsRef:
-            summaries = get_test_plan_run_summaries(
-                test_data_path, action.actionResult.testsRef.id
-            )
+            summaries = get_test_plan_run_summaries(test_data_path, action.actionResult.testsRef.id)
             if summaries.summaries and summaries.summaries[0].testableSummaries:
                 testable = summaries.summaries[0].testableSummaries[0]
                 all_tests = testable.all_tests()
                 for test in all_tests:
-                    if (
-                        isinstance(test, xcresult.ActionTestMetadata)
-                        and test.summaryRef
-                    ):
-                        result = get_action_test_summary(
-                            test_data_path, test.summaryRef.id
-                        )
+                    if isinstance(test, xcresult.ActionTestMetadata) and test.summaryRef:
+                        result = get_action_test_summary(test_data_path, test.summaryRef.id)
                         assert isinstance(result, xcresult.ActionTestSummary)
                         break
 
 
 def test_export_attachment():
     """Test exporting an attachment."""
-    test_data_path = os.path.join(
-        os.path.dirname(__file__), "data", "TestFailure.xcresult"
-    )
+    test_data_path = os.path.join(os.path.dirname(__file__), "data", "TestFailure.xcresult")
 
     with tempfile.TemporaryDirectory() as temp_dir:
         # This will fail if there are no attachments, which is okay
@@ -198,13 +181,8 @@ def test_export_attachment():
                     testable = summaries.summaries[0].testableSummaries[0]
                     all_tests = testable.all_tests()
                     for test in all_tests:
-                        if (
-                            isinstance(test, xcresult.ActionTestMetadata)
-                            and test.summaryRef
-                        ):
-                            summary = get_action_test_summary(
-                                test_data_path, test.summaryRef.id
-                            )
+                        if isinstance(test, xcresult.ActionTestMetadata) and test.summaryRef:
+                            summary = get_action_test_summary(test_data_path, test.summaryRef.id)
                             if summary.activitySummaries:
                                 for activity in summary.activitySummaries:
                                     if activity.attachments:
@@ -226,9 +204,7 @@ def test_export_attachment():
 
 def test_export_action_test_summary_group():
     """Test exporting action test summary group."""
-    test_data_path = os.path.join(
-        os.path.dirname(__file__), "data", "TestFailure.xcresult"
-    )
+    test_data_path = os.path.join(os.path.dirname(__file__), "data", "TestFailure.xcresult")
 
     with tempfile.TemporaryDirectory() as temp_dir:
         bundle = xcresult.Xcresults(test_data_path)
@@ -242,16 +218,12 @@ def test_export_action_test_summary_group():
                     testable = summaries.summaries[0].testableSummaries[0]
                     if testable.tests:
                         for test in testable.tests:
-                            export_action_test_summary_group(
-                                test_data_path, test, temp_dir
-                            )
+                            export_action_test_summary_group(test_data_path, test, temp_dir)
 
 
 def test_export_action_test_summary_group_skipped():
     """Test exporting a skipped test."""
-    test_data_path = os.path.join(
-        os.path.dirname(__file__), "data", "TestSuccess.xcresult"
-    )
+    test_data_path = os.path.join(os.path.dirname(__file__), "data", "TestSuccess.xcresult")
 
     with tempfile.TemporaryDirectory() as temp_dir:
         # Create a mock skipped test
@@ -265,9 +237,7 @@ def test_export_action_test_summary_group_skipped():
 
 def test_export_action_test_summary_group_no_identifier_url():
     """Test exporting a test with no identifier URL."""
-    test_data_path = os.path.join(
-        os.path.dirname(__file__), "data", "TestSuccess.xcresult"
-    )
+    test_data_path = os.path.join(os.path.dirname(__file__), "data", "TestSuccess.xcresult")
 
     with tempfile.TemporaryDirectory() as temp_dir:
         mock_test = xcresult.ActionTestMetadata()
@@ -280,9 +250,7 @@ def test_export_action_test_summary_group_no_identifier_url():
 
 def test_export_action_test_summary_group_no_summary_ref():
     """Test exporting a test with no summary ref."""
-    test_data_path = os.path.join(
-        os.path.dirname(__file__), "data", "TestSuccess.xcresult"
-    )
+    test_data_path = os.path.join(os.path.dirname(__file__), "data", "TestSuccess.xcresult")
 
     with tempfile.TemporaryDirectory() as temp_dir:
         mock_test = xcresult.ActionTestMetadata()
@@ -296,9 +264,7 @@ def test_export_action_test_summary_group_no_summary_ref():
 
 def test_export_action_test_summary_group_with_subtests():
     """Test exporting an ActionTestSummaryGroup with subtests."""
-    test_data_path = os.path.join(
-        os.path.dirname(__file__), "data", "TestSuccess.xcresult"
-    )
+    test_data_path = os.path.join(os.path.dirname(__file__), "data", "TestSuccess.xcresult")
 
     with tempfile.TemporaryDirectory() as temp_dir:
         bundle = xcresult.Xcresults(test_data_path)
@@ -314,7 +280,5 @@ def test_export_action_test_summary_group_with_subtests():
                         # Look for an ActionTestSummaryGroup
                         for test in testable.tests:
                             if isinstance(test, xcresult.ActionTestSummaryGroup):
-                                export_action_test_summary_group(
-                                    test_data_path, test, temp_dir
-                                )
+                                export_action_test_summary_group(test_data_path, test, temp_dir)
                                 break
