@@ -1,5 +1,8 @@
 """Test xcresult base class."""
 
+# pylint: disable=duplicate-code
+# pylint: disable=protected-access
+
 import os
 import sys
 
@@ -13,9 +16,6 @@ from xcresult.xcresult_base import XcresultsBase
 class MockXcresults(XcresultsBase):
     """Mock implementation of XcresultsBase for testing."""
 
-    def __init__(self, path: str):
-        super().__init__(path)
-
     @property
     def actions_invocation_record(self):
         """Return None for testing."""
@@ -27,7 +27,6 @@ class MockXcresults(XcresultsBase):
 
     def export_test_attachments(self, output_path: str):
         """Do nothing for testing."""
-        pass
 
 
 def test_init_absolute_path():
@@ -49,7 +48,7 @@ def test_actions_invocation_record_not_implemented():
     """Test that actions_invocation_record raises NotImplementedError in base class."""
 
     class UnimplementedXcresults(XcresultsBase):
-        pass
+        """Subclass that does not override any of the abstract members."""
 
     xcresults = UnimplementedXcresults("/test/path")
 
@@ -64,7 +63,7 @@ def test_get_not_implemented():
     """Test that get raises NotImplementedError in base class."""
 
     class UnimplementedXcresults(XcresultsBase):
-        pass
+        """Subclass that does not override any of the abstract members."""
 
     xcresults = UnimplementedXcresults("/test/path")
 
@@ -79,7 +78,7 @@ def test_export_test_attachments_not_implemented():
     """Test that export_test_attachments raises NotImplementedError in base class."""
 
     class UnimplementedXcresults(XcresultsBase):
-        pass
+        """Subclass that does not override any of the abstract members."""
 
     xcresults = UnimplementedXcresults("/test/path")
 

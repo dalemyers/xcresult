@@ -1,5 +1,7 @@
 """Test base types."""
 
+# pylint: disable=duplicate-code
+
 import datetime
 import os
 import sys

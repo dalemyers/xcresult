@@ -1,5 +1,7 @@
 """Test command line functionality."""
 
+# pylint: disable=duplicate-code
+
 import os
 import sys
 import tempfile

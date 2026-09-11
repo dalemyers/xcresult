@@ -1,5 +1,7 @@
 """Final tests to get xcresulttool.py to 100% coverage."""
 
+# pylint: disable=duplicate-code
+
 import os
 import sys
 import subprocess

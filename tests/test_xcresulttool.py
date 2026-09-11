@@ -1,5 +1,8 @@
 """Test xcresulttool functionality."""
 
+# pylint: disable=duplicate-code
+# pylint: disable=invalid-name
+
 import datetime
 import os
 import sys
@@ -20,6 +23,59 @@ from xcresult.xcresulttool import (
 from xcresult.exceptions import UnsupportedTypeException
 
 # pylint: enable=wrong-import-position
+
+
+def _first_attachment(bundle: xcresult.Xcresults, test_data_path: str) -> tuple[str, str] | None:
+    """Return the name and payload reference of the first exportable attachment.
+
+    :param bundle: The already loaded result bundle to walk.
+    :param test_data_path: Path to the result bundle on disk.
+    :returns: A (filename, payload reference identifier) tuple, or None if the
+              bundle has no attachment with a payload reference.
+    """
+    if not bundle.actions_invocation_record.actions:
+        return None
+
+    action = bundle.actions_invocation_record.actions[0]
+    if not action.actionResult.testsRef:
+        return None
+
+    summaries = get_test_plan_run_summaries(test_data_path, action.actionResult.testsRef.id)
+    if not summaries.summaries or not summaries.summaries[0].testableSummaries:
+        return None
+
+    testable = summaries.summaries[0].testableSummaries[0]
+    for test in testable.all_tests():
+        if not isinstance(test, xcresult.ActionTestMetadata) or not test.summaryRef:
+            continue
+        summary = get_action_test_summary(test_data_path, test.summaryRef.id)
+        for activity in summary.activitySummaries or []:
+            for attachment in activity.attachments or []:
+                if attachment.payloadRef:
+                    return attachment.filename or "test", attachment.payloadRef.id
+
+    return None
+
+
+def _first_testable(bundle: xcresult.Xcresults, test_data_path: str):
+    """Return the first testable summary in the bundle, or None if there is none.
+
+    :param bundle: The already loaded result bundle to walk.
+    :param test_data_path: Path to the result bundle on disk.
+    :returns: The first ActionTestableSummary, or None.
+    """
+    if not bundle.actions_invocation_record.actions:
+        return None
+
+    action = bundle.actions_invocation_record.actions[0]
+    if not action.actionResult.testsRef:
+        return None
+
+    summaries = get_test_plan_run_summaries(test_data_path, action.actionResult.testsRef.id)
+    if not summaries.summaries or not summaries.summaries[0].testableSummaries:
+        return None
+
+    return summaries.summaries[0].testableSummaries[0]
 
 
 def test_deserialize_string():
@@ -171,35 +227,14 @@ def test_export_attachment():
         # This will fail if there are no attachments, which is okay
         # We're just testing the export_attachment function exists and can be called
         bundle = xcresult.Xcresults(test_data_path)
-        if bundle.actions_invocation_record.actions:
-            action = bundle.actions_invocation_record.actions[0]
-            if action.actionResult.testsRef:
-                summaries = get_test_plan_run_summaries(
-                    test_data_path, action.actionResult.testsRef.id
-                )
-                if summaries.summaries and summaries.summaries[0].testableSummaries:
-                    testable = summaries.summaries[0].testableSummaries[0]
-                    all_tests = testable.all_tests()
-                    for test in all_tests:
-                        if isinstance(test, xcresult.ActionTestMetadata) and test.summaryRef:
-                            summary = get_action_test_summary(test_data_path, test.summaryRef.id)
-                            if summary.activitySummaries:
-                                for activity in summary.activitySummaries:
-                                    if activity.attachments:
-                                        for attachment in activity.attachments:
-                                            if attachment.payloadRef:
-                                                output_path = os.path.join(
-                                                    temp_dir,
-                                                    attachment.filename or "test",
-                                                )
-                                                export_attachment(
-                                                    test_data_path,
-                                                    attachment.payloadRef.id,
-                                                    "file",
-                                                    output_path,
-                                                )
-                                                assert os.path.exists(output_path)
-                                                return
+        attachment = _first_attachment(bundle, test_data_path)
+        if attachment is None:
+            return
+
+        filename, payload_id = attachment
+        output_path = os.path.join(temp_dir, filename)
+        export_attachment(test_data_path, payload_id, "file", output_path)
+        assert os.path.exists(output_path)
 
 
 def test_export_action_test_summary_group():
@@ -268,17 +303,12 @@ def test_export_action_test_summary_group_with_subtests():
 
     with tempfile.TemporaryDirectory() as temp_dir:
         bundle = xcresult.Xcresults(test_data_path)
-        if bundle.actions_invocation_record.actions:
-            action = bundle.actions_invocation_record.actions[0]
-            if action.actionResult.testsRef:
-                summaries = get_test_plan_run_summaries(
-                    test_data_path, action.actionResult.testsRef.id
-                )
-                if summaries.summaries and summaries.summaries[0].testableSummaries:
-                    testable = summaries.summaries[0].testableSummaries[0]
-                    if testable.tests:
-                        # Look for an ActionTestSummaryGroup
-                        for test in testable.tests:
-                            if isinstance(test, xcresult.ActionTestSummaryGroup):
-                                export_action_test_summary_group(test_data_path, test, temp_dir)
-                                break
+        testable = _first_testable(bundle, test_data_path)
+        if testable is None:
+            return
+
+        # Look for an ActionTestSummaryGroup
+        for test in testable.tests or []:
+            if isinstance(test, xcresult.ActionTestSummaryGroup):
+                export_action_test_summary_group(test_data_path, test, temp_dir)
+                break

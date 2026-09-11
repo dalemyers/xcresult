@@ -1,5 +1,11 @@
 """Tests to boost coverage to higher levels."""
 
+# pylint: disable=c-extension-no-member
+# pylint: disable=duplicate-code
+# pylint: disable=import-outside-toplevel
+# pylint: disable=invalid-name
+# pylint: disable=protected-access
+
 import os
 import sys
 import tempfile
@@ -7,10 +13,10 @@ from unittest import mock
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 # pylint: disable=wrong-import-position
+from lxml import etree as ET
 import xcresult
 from xcresult.junit_writer import JunitWriter
 from xcresult.exceptions import MissingPropertyException
-from lxml import etree as ET
 
 # pylint: enable=wrong-import-position
 
@@ -328,7 +334,7 @@ def test_xcresulttool_export_attachment_file_exists():
         output_dir = os.path.join(temp_dir, "test")
         os.makedirs(output_dir, exist_ok=True)
         conflict_file = os.path.join(output_dir, "screenshot.png")
-        with open(conflict_file, "w") as f:
+        with open(conflict_file, "w", encoding="utf-8") as f:
             f.write("existing")
 
         with mock.patch("xcresult.xcresulttool.get"):

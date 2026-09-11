@@ -1,5 +1,9 @@
 """Test model classes."""
 
+# pylint: disable=duplicate-code
+# pylint: disable=import-outside-toplevel
+# pylint: disable=protected-access
+
 import os
 import sys
 
@@ -55,7 +59,7 @@ def test_xchash_object_no_members():
     """Test xchash with object without _members."""
 
     class NoMembers:
-        pass
+        """Object deliberately lacking a _members attribute."""
 
     obj = NoMembers()
     result = xchash(obj)
@@ -65,7 +69,9 @@ def test_xchash_object_no_members():
 def test_xcresult_object_base():
     """Test XcresultObject base class."""
     obj = XcresultObject()
-    assert obj._members() == ()
+    members = obj._members()
+    assert isinstance(members, tuple)
+    assert len(members) == 0
 
 
 def test_xcresult_object_eq_same_type():
@@ -348,7 +354,7 @@ def test_result_issue_summaries():
     summaries.warningSummaries = []
     summaries.testFailureSummaries = []
 
-    assert summaries.errorSummaries == []
+    assert len(summaries.errorSummaries) == 0
 
 
 def test_action_result():
@@ -375,7 +381,7 @@ def test_actions_invocation_record():
     record = xcresult.ActionsInvocationRecord()
     record.actions = []
 
-    assert record.actions == []
+    assert len(record.actions) == 0
 
 
 def test_action_device_record():

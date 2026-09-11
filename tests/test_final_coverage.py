@@ -1,5 +1,9 @@
 """Final tests to push coverage to maximum."""
 
+# pylint: disable=duplicate-code
+# pylint: disable=import-outside-toplevel
+# pylint: disable=invalid-name
+
 import os
 import sys
 import tempfile
@@ -249,7 +253,7 @@ def test_xcresulttool_export_failure_attachment_file_exists():
         output_dir = os.path.join(temp_dir, "test")
         os.makedirs(output_dir, exist_ok=True)
         conflict_file = os.path.join(output_dir, "error.png")
-        with open(conflict_file, "w") as f:
+        with open(conflict_file, "w", encoding="utf-8") as f:
             f.write("existing")
 
         with mock.patch("xcresult.xcresulttool.get"):

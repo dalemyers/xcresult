@@ -5,7 +5,6 @@ import sys
 from typing import Any, Optional
 import urllib.parse
 
-
 # pylint: disable=too-many-lines
 # pylint: disable=invalid-name
 

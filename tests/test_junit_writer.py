@@ -1,5 +1,9 @@
 """Test JUnit writer functionality."""
 
+# pylint: disable=c-extension-no-member
+# pylint: disable=duplicate-code
+# pylint: disable=import-outside-toplevel
+
 import os
 import sys
 import tempfile

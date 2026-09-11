@@ -1,5 +1,9 @@
 """Comprehensive tests for model classes to increase coverage."""
 
+# pylint: disable=duplicate-code
+# pylint: disable=import-outside-toplevel
+# pylint: disable=protected-access
+
 import os
 import sys
 
@@ -56,10 +60,10 @@ def test_xcresult_object_not_equal_different_type():
 
     obj = XcresultObject()
 
-    # Test inequality with different type (line 57)
-    assert obj != "string"
-    assert obj != 123
-    assert obj != None
+    # Test inequality with different type (line 57). These deliberately compare
+    # against values of other types to exercise the isinstance guard in __eq__.
+    for other in ("string", 123, None):
+        assert obj != other
 
 
 def test_xcresult_object_hash():

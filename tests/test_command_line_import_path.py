@@ -1,5 +1,8 @@
 """Test command_line import error handling."""
 
+# pylint: disable=duplicate-code
+# pylint: disable=import-outside-toplevel
+
 import os
 import sys
 import subprocess
@@ -33,6 +36,7 @@ def test_command_line_standalone_execution():
         text=True,
         timeout=5,
         cwd=project_root,  # Run from project root so imports can resolve
+        check=False,
     )
 
     # Should succeed (exit code 0) and show help text
@@ -53,6 +57,7 @@ def test_command_line_as_module():
         timeout=5,
         cwd=project_root,
         env={**os.environ, "PYTHONPATH": project_root},
+        check=False,
     )
 
     # Should succeed

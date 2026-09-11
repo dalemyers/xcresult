@@ -1,5 +1,11 @@
 """Additional tests to increase coverage."""
 
+# pylint: disable=c-extension-no-member
+# pylint: disable=duplicate-code
+# pylint: disable=import-outside-toplevel
+# pylint: disable=invalid-name
+# pylint: disable=protected-access
+
 import os
 import sys
 import tempfile
@@ -18,10 +24,10 @@ def test_command_line_import_error():
     """Test the import error path in command_line."""
     # This tests lines 13-16 in command_line.py by forcing the import path
     import importlib
-    import xcresult.command_line
+    from xcresult import command_line
 
     # Reload the module to test import
-    importlib.reload(xcresult.command_line)
+    importlib.reload(command_line)
 
 
 def test_command_line_check_issues_with_location():
@@ -67,7 +73,7 @@ def test_command_line_main():
             except SystemExit:
                 pass
             # At least verify it attempted to exit
-            assert mock_exit.called or True
+            assert mock_exit.called
 
 
 def test_junit_writer_failure_no_location():
@@ -141,7 +147,9 @@ def test_junit_writer_with_attachments_and_identifierURL():
         os.makedirs(test_attachments_path, exist_ok=True)
 
         # Create a fake attachment file
-        with open(os.path.join(test_attachments_path, "screenshot.png"), "w") as f:
+        with open(
+            os.path.join(test_attachments_path, "screenshot.png"), "w", encoding="utf-8"
+        ) as f:
             f.write("fake")
 
         with mock.patch.object(writer.results, "get"):
@@ -217,7 +225,6 @@ def test_xcresulttool_subprocess_error_paths():
     """Test subprocess error handling."""
     # These would test error paths but subprocess commands require xcrun
     # which may not be available in test environment
-    pass
 
 
 def test_model_properties():
