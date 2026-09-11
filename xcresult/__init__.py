@@ -10,6 +10,7 @@ from xcresult.exceptions import (
     XcresultException,
 )
 from xcresult.model import *
+from xcresult.model_base import XcresultObject, deserialize
 from xcresult.xcresults import Xcresults
 
 # pylint: enable=unused-import

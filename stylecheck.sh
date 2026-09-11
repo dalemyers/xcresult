@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 pushd "${VIRTUAL_ENV}/.." > /dev/null
 
 source "${VIRTUAL_ENV}/bin/activate"
@@ -13,4 +15,3 @@ python -m mypy --ignore-missing-imports xcresult/ tests/
 python -m pyright
 
 popd > /dev/null
-

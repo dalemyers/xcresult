@@ -2,11 +2,14 @@
 
 """Command line handler for xcresult."""
 
+from __future__ import annotations
+
 import argparse
 import enum
 import os
 import sys
 from typing import Sequence
+from urllib.parse import parse_qs, unquote, urlparse
 
 try:
     import xcresult
@@ -30,8 +33,8 @@ class IssueType(enum.Enum):
 def _handle_export(args: argparse.Namespace) -> int:
     """Handle the export sub command."""
 
-    if not os.path.exists(args.output_path):
-        print("Output folder does not exist")
+    if not os.path.isdir(args.output_path):
+        print("Output folder does not exist or is not a directory", file=sys.stderr)
         return 1
 
     try:
@@ -50,7 +53,7 @@ def _handle_junit(args: argparse.Namespace) -> int:
     """Handle the junit sub command."""
 
     if os.path.exists(args.output_path):
-        print("Output file already exists")
+        print("Output file already exists", file=sys.stderr)
         return 1
 
     try:
@@ -69,10 +72,28 @@ def _handle_junit(args: argparse.Namespace) -> int:
     return 0
 
 
+def _source_location(source_url: str) -> str:
+    """Format a source URL with its available, one-based line and column."""
+    location = urlparse(source_url)
+    path = unquote(location.path)
+    fragment = parse_qs(location.fragment)
+    for key in ("StartingLineNumber", "StartingColumnNumber"):
+        value = fragment.get(key, [None])[0]
+        try:
+            number = int(value) if value is not None else -1
+        except ValueError:
+            break
+        if number < 0:
+            break
+        path += f":{number + 1}"
+    return path
+
+
 def _check_summary_type(
-    summaries: Sequence[xcresult.IssueSummary] | None,
+    summaries: Sequence[xcresult.Issue | xcresult.TestFailure] | None,
     summary_name: str,
 ) -> bool:
+    """Print every issue in a selected category and report whether any exist."""
     print(f"=== {summary_name} ===")
     if summaries is None:
         print(f"No {summary_name} found.")
@@ -85,12 +106,11 @@ def _check_summary_type(
         return False
 
     for summary in summaries:
-        if location := summary.documentLocationInCreatingWorkspace:
-            print(
-                f"{location.path}:{location.starting_line_number}:{location.starting_column_number} -> {summary.message}"
-            )
+        message = summary.message if isinstance(summary, xcresult.Issue) else summary.failureText
+        if isinstance(summary, xcresult.Issue) and (source_url := summary.sourceURL):
+            print(f"{_source_location(source_url)} -> {message}")
         else:
-            print(summary.message)
+            print(message)
 
     print()
 
@@ -100,39 +120,36 @@ def _check_summary_type(
 def _handle_check_issues(args: argparse.Namespace) -> int:
     """Handle the check-issues sub command."""
 
-    bundle = xcresult.Xcresults(args.bundle_path)
-
+    selected = set(IssueType) if args.issue_types is None else set(args.issue_types)
     found_issues = False
-
-    if args.issue_types is None or IssueType.ERROR in args.issue_types:
-        found_issues = found_issues or _check_summary_type(
-            bundle.actions_invocation_record.issues.errorSummaries,
-            "Errors",
+    try:
+        bundle = xcresult.Xcresults(args.bundle_path)
+        build_categories = (
+            (IssueType.ERROR, "errors", "Errors"),
+            (IssueType.WARNING, "warnings", "Warnings"),
+            (IssueType.ANALYZER_WARNING, "analyzerWarnings", "Analyzer Warnings"),
         )
+        if any(issue_type in selected for issue_type, _, _ in build_categories):
+            build_results = bundle.build_results
+            for issue_type, attribute, name in build_categories:
+                if issue_type in selected:
+                    found_issues = (
+                        _check_summary_type(getattr(build_results, attribute), name) or found_issues
+                    )
 
-    if args.issue_types is None or IssueType.WARNING in args.issue_types:
-        found_issues = found_issues or _check_summary_type(
-            bundle.actions_invocation_record.issues.warningSummaries,
-            "Warnings",
+        test_categories = (
+            (IssueType.TEST_FAILURE, "testFailures", "Test Failures"),
+            (IssueType.TEST_WARNING, "runtimeWarnings", "Test Warnings"),
         )
-
-    if args.issue_types is None or IssueType.ANALYZER_WARNING in args.issue_types:
-        found_issues = found_issues or _check_summary_type(
-            bundle.actions_invocation_record.issues.analyzerWarningSummaries,
-            "Analyzer Warnings",
-        )
-
-    if args.issue_types is None or IssueType.TEST_FAILURE in args.issue_types:
-        found_issues = found_issues or _check_summary_type(
-            bundle.actions_invocation_record.issues.testFailureSummaries,
-            "Test Failures",
-        )
-
-    if args.issue_types is None or IssueType.TEST_WARNING in args.issue_types:
-        found_issues = found_issues or _check_summary_type(
-            bundle.actions_invocation_record.issues.testWarningSummaries,
-            "Test Warnings",
-        )
+        if any(issue_type in selected for issue_type, _, _ in test_categories):
+            summary = bundle.test_summary if bundle.content_availability.hasTestResults else None
+            for issue_type, attribute, name in test_categories:
+                if issue_type in selected:
+                    issues = getattr(summary, attribute) if summary is not None else None
+                    found_issues = _check_summary_type(issues, name) or found_issues
+    except Exception as ex:  # pylint: disable=broad-exception-caught
+        print(f"Could not check issues: {ex}", file=sys.stderr)
+        return 1
 
     if found_issues:
         print()
@@ -219,20 +236,16 @@ def _handle_arguments() -> int:
 
     args = parser.parse_args()
 
-    try:
-        _ = args.subcommand
-    # pylint: disable=broad-exception-caught
-    except Exception:
-        # pylint: enable=broad-exception-caught
+    if not hasattr(args, "subcommand"):
         parser.print_help()
         return 1
 
     if not os.path.exists(args.bundle_path):
-        print("Bundle path does not exist")
+        print("Bundle path does not exist", file=sys.stderr)
         return 1
 
     if not os.path.isdir(args.bundle_path):
-        print("Bundle path is not a valid bundle")
+        print("Bundle path is not a valid bundle", file=sys.stderr)
         return 1
 
     if args.subcommand == "export":
@@ -244,7 +257,7 @@ def _handle_arguments() -> int:
     if args.subcommand == "check-issues":
         return _handle_check_issues(args)
 
-    print("Unrecognized command")
+    print("Unrecognized command", file=sys.stderr)
     return 1
 
 

@@ -1,101 +1,80 @@
-"""A class for dealing with xcresults."""
+"""High-level access to modern xcresult reports."""
 
-import logging
-from typing import Any, cast
+from functools import cached_property
 
-from xcresult.exceptions import (
-    MissingPropertyException,
-)
+from xcresult import xcresulttool
 from xcresult.junit_writer import JunitWriter, TestFilter
-from xcresult.model import ActionsInvocationRecord, ActionTestPlanRunSummaries
-from xcresult.xcresult_base import XcresultsBase
-from xcresult.xcresulttool import (
-    deserialize,
-    export_attachment,
-    get_actions_invocation_record,
-    get,
-    export_action_test_summary_group,
+from xcresult.model import (
+    Activities,
+    BuildResults,
+    ContentAvailability,
+    Summary,
+    TestAttachmentDetails,
+    TestDetails,
+    Tests,
 )
-
-# pylint: enable=unused-import
+from xcresult.xcresult_base import XcresultsBase
 
 
 class Xcresults(XcresultsBase):
-    """Wrapper around an xcresults bundle."""
-
-    path: str
-    _actions_invocation_record: ActionsInvocationRecord | None
+    """A result bundle with lazily loaded report snapshots."""
 
     @property
-    def actions_invocation_record(self) -> ActionsInvocationRecord:
-        """Get the actions invocation record
+    def content_availability(self) -> ContentAvailability:
+        """Get the bundle's available content."""
+        return self._content_availability
 
-        This is the default response when using xcresulttool
+    @cached_property
+    def _content_availability(self) -> ContentAvailability:
+        """Load content availability once."""
+        return xcresulttool.get_content_availability(self.path)
 
-        :returns: An ActionsInvocationRecord
+    @cached_property
+    def build_results(self) -> BuildResults:
+        """Get build issues and metadata."""
+        return xcresulttool.get_build_results(self.path)
+
+    @cached_property
+    def test_summary(self) -> Summary:
+        """Get test counts, failures, warnings, and destinations."""
+        return xcresulttool.get_test_summary(self.path)
+
+    @property
+    def tests(self) -> Tests:
+        """Get the test hierarchy."""
+        return self._tests
+
+    @cached_property
+    def _tests(self) -> Tests:
+        """Load the test hierarchy once."""
+        return xcresulttool.get_tests(self.path)
+
+    def test_details(self, test_id: str) -> TestDetails:
+        """Get individual runs for a test.
+
+        :param test_id: Test identifier URL or string.
+        :returns: The test details report.
         """
-        if not self._actions_invocation_record:
-            logging.debug("Actions invocation record not found, fetching...")
-            self._actions_invocation_record = get_actions_invocation_record(self.path)
-            assert self._actions_invocation_record is not None
-        return self._actions_invocation_record
+        return xcresulttool.get_test_details(self.path, test_id)
 
-    def export_attachment(self, identifier: str, type_identifier: str, output_path: str) -> None:
-        """Get an attachment from an xcresult bundle.
+    def test_activities(self, test_id: str) -> Activities:
+        """Get activity trees for a test.
 
-        :param path: The path of the xcresult bundle
-        :param identifier: The identifier of the attachment to export
-        :param type_identifier: The type of the attachment to export (.e.g. 'public.png')
-        :param output_path: The output path to write the attachment to
+        :param test_id: Test identifier URL or string.
+        :returns: The test activities report.
         """
-        export_attachment(self.path, identifier, type_identifier, output_path)
+        return xcresulttool.get_test_activities(self.path, test_id)
 
-    def get(self, identifier: str) -> dict[str, Any]:
-        """Run a get command on bundle with the given id.
+    def export_test_attachments(
+        self, output_path: str, test_id: str | None = None
+    ) -> list[TestAttachmentDetails]:
+        """Export attachments using the modern manifest layout.
 
-        :param id: The ID of the item to get.
+        :param output_path: Directory for files and ``manifest.json``.
+        :param test_id: Optional test or suite identifier.
+        :returns: Manifest entries for the exported files.
         """
-        return get(self.path, identifier)
-
-    def export_test_attachments(self, output_path: str) -> None:
-        """Export all test attachments."""
-        if not self.actions_invocation_record:
-            raise MissingPropertyException("No actions invocation record found")
-
-        if not self.actions_invocation_record.actions:
-            raise MissingPropertyException("No actions found")
-
-        logging.info("Exporting test attachments")
-
-        for action in self.actions_invocation_record.actions:
-            logging.info(
-                f"\tExporting action: {action.schemeCommandName} - {action.schemeTaskName} - {action.testPlanName}"
-            )
-
-            if action.actionResult.testsRef is None:
-                logging.info("\tNo testRef set on action.actionResult, skipping.")
-                continue
-
-            test_id = action.actionResult.testsRef.id
-            summaries = cast(ActionTestPlanRunSummaries, deserialize(self.get(test_id)))
-
-            if not summaries.summaries:
-                raise MissingPropertyException("No summaries found")
-
-            for summary in summaries.summaries:
-                logging.info(f"\t\tExporting summary: {summary.name}")
-                if not summary.testableSummaries:
-                    raise MissingPropertyException("No testable summaries found")
-
-                for testable_summary in summary.testableSummaries:
-                    logging.info(f"\t\t\tExporting testable summary: {testable_summary.name}")
-
-                    if not testable_summary.tests:
-                        raise MissingPropertyException("No tests found")
-
-                    for test in testable_summary.tests:
-                        logging.info(f"\t\t\t\tExporting test: {test.identifier}")
-                        export_action_test_summary_group(self.path, test, output_path, 5)
+        return xcresulttool.export_test_attachments(self.path, output_path, test_id)
 
     # pylint: disable=too-many-positional-arguments
     def write_junit(
@@ -107,25 +86,16 @@ class Xcresults(XcresultsBase):
         collapse_retries: bool = False,
         test_filter: TestFilter | None = None,
     ) -> None:
-        """Write the test results as a junit.
+        """Write a JUnit report from individual modern test runs.
 
-        :param path: The path to write the junit to
-        :param export_attachments_path: The path to write the attachments to. If None, the attachments will not be exported.
-        :param test_class_prefix: Optional prefix prepended to every test's classname.
-        :param test_class_suffix: Optional suffix appended to every test's classname.
-        :param collapse_retries: When True, collapse the multiple leaves a test
-            produces under ``-retry-tests-on-failure`` into a single testcase (a
-            pass if any attempt passed). Attempts are matched across every top
-            level group of a testable, since xcodebuild records the initial run
-            and the retries in separate groups. The surviving testcase is written
-            to the suite for the group it actually ran in, and a group left with
-            no testcases is not written at all. Defaults to False (one testcase
-            per attempt).
-        :param test_filter: Optional predicate called for each test. Return False
-            to omit that test entirely — it is excluded from the emitted XML and
-            from the tests/failures/skipped counts. Useful for dropping
-            intentionally-disabled (e.g. flaky) tests so they are not reported as
-            failures. Defaults to None (every test is written).
+        :param path: Output XML path.
+        :param export_attachments_path: Optional attachment export directory.
+        :param test_class_prefix: Optional classname prefix.
+        :param test_class_suffix: Optional classname suffix.
+        :param collapse_retries: Keep one attempt per test, arguments, device, and
+            configuration, preferring a passing attempt.
+        :param test_filter: Predicate receiving the modern TestNode for a test;
+            return False to exclude it from both XML and counts.
         """
         JunitWriter(
             self,
@@ -136,5 +106,3 @@ class Xcresults(XcresultsBase):
             collapse_retries,
             test_filter,
         ).write()
-
-    # pylint: enable=too-many-positional-arguments

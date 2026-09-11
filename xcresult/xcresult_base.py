@@ -1,45 +1,42 @@
-"""A base class for dealing with xcresults."""
+"""Interface consumed by the JUnit writer."""
 
 import abc
 import os
-from typing import Any
 
-from xcresult.model import ActionsInvocationRecord
+from xcresult.model import ContentAvailability, TestAttachmentDetails, TestDetails, Tests
 
 
 class XcresultsBase(abc.ABC):
-    """Wrapper around an xcresults bundle."""
-
-    path: str
-    _actions_invocation_record: ActionsInvocationRecord | None
+    """A result bundle that exposes modern test reports."""
 
     def __init__(self, path: str) -> None:
-        if path.startswith("/"):
-            self.path = path
-        else:
-            self.path = os.path.join(os.getcwd(), path)
-        self._actions_invocation_record = None
+        self.path = os.path.abspath(path)
 
     @property
-    def actions_invocation_record(self) -> ActionsInvocationRecord:
-        """Get the actions invocation record
+    @abc.abstractmethod
+    def content_availability(self) -> ContentAvailability:
+        """Get available bundle content."""
 
-        This is the default response when using xcresulttool
+    @property
+    @abc.abstractmethod
+    def tests(self) -> Tests:
+        """Get the test tree."""
 
-        :returns: An ActionsInvocationRecord
+    @abc.abstractmethod
+    def test_details(self, test_id: str) -> TestDetails:
+        """Get a test's detailed runs.
+
+        :param test_id: Test identifier URL or string.
+        :returns: The test details.
         """
-        raise NotImplementedError()
 
-    def get(self, identifier: str) -> dict[str, Any]:
-        """Run a get command on bundle with the given id.
+    @abc.abstractmethod
+    def export_test_attachments(
+        self, output_path: str, test_id: str | None = None
+    ) -> list[TestAttachmentDetails]:
+        """Export attachments.
 
-        :param id: The ID of the item to get.
+        :param output_path: Directory for exported files.
+        :param test_id: Optional test or suite identifier.
+        :returns: The export manifest.
         """
-        raise NotImplementedError()
-
-    def export_test_attachments(self, output_path: str) -> None:
-        """Export test attachments from the xcresult bundle.
-
-        :param output_path: The path to export the attachments to.
-        """
-        raise NotImplementedError()

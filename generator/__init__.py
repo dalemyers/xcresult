@@ -1,469 +1,301 @@
-"""A module for generating xcresult models."""
+"""Generate typed models from the modern xcresulttool JSON endpoint schemas.
 
-import os
+Run ``python -m generator`` using Xcode 27. Schema version 0.4 is deliberately
+pinned so a newer Xcode cannot silently change the checked-in public model API.
+"""
+
+from __future__ import annotations
+
+from copy import deepcopy
+import json
+import keyword
+from pathlib import Path
 import subprocess
+from typing import cast
+
+SCHEMA_VERSION = "0.4.0"
+ENDPOINTS = (
+    ("get", "test-results", "summary"),
+    ("get", "test-results", "tests"),
+    ("get", "test-results", "test-details"),
+    ("get", "test-results", "activities"),
+    ("get", "build-results"),
+    ("get", "content-availability"),
+    ("export", "attachments"),
+)
 
 
-DATA_TYPES = {
-    "Bool": "bool",
-    "Data": "bytes",
-    "Date": "datetime.datetime",
-    "Double": "float",
-    "Int": "int",
-    "Int16": "int",
-    "Int32": "int",
-    "Int64": "int",
-    "Int8": "int",
-    "SchemaSerializable": "Any",
-    "String": "str",
-    "UInt16": "int",
-    "UInt32": "int",
-    "UInt64": "int",
-    "UInt8": "int",
-    "URL": "str",
-}
+class SchemaError(ValueError):
+    """An endpoint schema cannot be represented safely."""
 
 
-def get_indentation(line: str) -> int:
-    """Get the indentation level of a line.
+def _mapping(value: object, path: str) -> dict[str, object]:
+    """Validate a JSON object at the untyped JSON parsing boundary."""
+    if not isinstance(value, dict):
+        raise SchemaError(f"{path}: expected an object")
+    if not all(isinstance(key, str) for key in cast(dict[object, object], value)):
+        raise SchemaError(f"{path}: expected string keys")
+    return cast(dict[str, object], value)
 
-    Every 2 spaces counts as 1 level.
 
-    :param line: The line to check
+def _name(value: str) -> str:
+    """Validate an identifier without changing Apple's public field spelling."""
+    if not value.isidentifier() or keyword.iskeyword(value):
+        raise SchemaError(f"Unsupported Python identifier: {value!r}")
+    return value
 
-    :returns: The indentation level
+
+def _type_name(value: str) -> str:
+    """Prevent schema types from shadowing names used by generated annotations."""
+    _name(value)
+    if value in {
+        "str",
+        "int",
+        "float",
+        "bool",
+        "list",
+        "Literal",
+        "TypeAlias",
+        "NoneType",
+        "XcresultObject",
+        "dataclass",
+        "SCHEMA_VERSION",
+        "__all__",
+    }:
+        raise SchemaError(f"Schema type shadows a generated name: {value}")
+    return value
+
+
+def _rename_references(value: object, renames: dict[str, str]) -> object:
+    """Copy a schema while consistently renaming endpoint-local references."""
+    if isinstance(value, dict):
+        result: dict[str, object] = {}
+        for key, item in _mapping(cast(object, value), "schema").items():
+            if key == "$ref" and isinstance(item, str):
+                prefix = "#/schemas/"
+                if not item.startswith(prefix):
+                    raise SchemaError(f"Unsupported reference {item!r}")
+                item = prefix + renames.get(item[len(prefix) :], item[len(prefix) :])
+            result[key] = _rename_references(item, renames)
+        return result
+    if isinstance(value, list):
+        return [_rename_references(item, renames) for item in cast(list[object], value)]
+    return value
+
+
+def correct_schema_errors(
+    document: dict[str, object], endpoint: tuple[str, ...]
+) -> dict[str, object]:
+    """Correct two verified Apple schema 0.4.0 object-versus-array mistakes.
+
+    Public raw JSON evidence (not locally regenerated reports):
+    - codemagic-ci-cd/cli-tools commit feb80b2d944923402e56b825f40c038a39f35b64,
+      tests/models/xctests/mocks/test_results_summary.json, lines 1-21.
+    - alvarhansen/OpenXCResultTool commit 070f69b6ed758fc997707b2591ce43d26b25e3db,
+      Tests/Fixtures/Test-RandomStuff-2026.01.11_12-36-33-+0200.activities.testExample.json,
+      lines 1-25.
+
+    Source URLs:
+    https://github.com/codemagic-ci-cd/cli-tools/blob/feb80b2d944923402e56b825f40c038a39f35b64/tests/models/xctests/mocks/test_results_summary.json#L1-L21
+    https://github.com/alvarhansen/OpenXCResultTool/blob/070f69b6ed758fc997707b2591ce43d26b25e3db/Tests/Fixtures/Test-RandomStuff-2026.01.11_12-36-33-%2B0200.activities.testExample.json#L1-L25
+
+    Both properties contain arrays on the wire. Keep these endpoint-specific
+    corrections narrow, and fail rather than guessing if the schema changes.
     """
-
-    if len(line) == 0:
-        return 0
-
-    count = 0
-    while True:
-        if line[count] == " ":
-            count += 1
-        else:
-            break
-
-    assert count % 2 == 0
-
-    return int(count / 2)
-
-
-def dedent(lines: list[str]) -> list[str]:
-    """Dedent a list of lines by one level.
-
-    :param lines: The lines to dedent
-
-    :returns: The dedented lines
-    """
-    return [line[2:] for line in lines]
-
-
-class XcresultType:
-    """A class for converting xcresult types to Python types."""
-
-    def __init__(self, original: str) -> None:
-        self.original = original
-        self.root_type = original
-        self.is_list = False
-        self.is_optional = False
-
-        if self.root_type.startswith("["):
-            self.is_list = True
-            self.root_type = self.root_type[1:-1]
-
-        if self.root_type.endswith("?"):
-            self.root_type = self.root_type[:-1]
-            self.is_optional = True
-
-    def python_type(self, container_type: str) -> str:
-        """Convert the xcresult type to a Python type.
-
-        :param container_type: The name of the container type
-
-        :returns: The Python code for the type
-        """
-
-        p_type = DATA_TYPES.get(self.root_type, self.root_type)
-
-        is_self_referential = p_type == container_type
-
-        if is_self_referential:
-            p_type = f'"{p_type}"'
-
-        if self.is_optional:
-            if is_self_referential:
-                p_type = f"Optional[{p_type}]"
-            else:
-                p_type = f"{p_type} | None"
-
-        if self.is_list:
-            p_type = f"list[{p_type}]"
-
-        return p_type
-
-
-class Definition:
-    """A class for representing a definition in the xcresulttool format description."""
-
-    def __init__(
-        self,
-        name: str,
-        kind: str | None,
-        supertype: str | None,
-        properties: list[tuple[str, str]],
-        original: list[str] | None = None,
-    ) -> None:
-        self.name = name
-        self.kind = kind
-        self.supertype = supertype if supertype else "XcresultObject"
-        self.properties = properties
-        self.original = original
-
-    def dependency_types(self) -> list[str]:
-        """Return a list of the types that this definition uses.
-
-        :returns: The list of types
-        """
-        raw_types = list(map(lambda x: x[1], self.properties))
-        if self.supertype:
-            raw_types.append(self.supertype)
-
-        return list(
-            set(
-                map(
-                    lambda x: XcresultType(x).root_type,
-                    filter(
-                        lambda x: x not in DATA_TYPES,
-                        raw_types,
-                    ),
-                )
-            )
-        )
-
-    def _generate_definition_header(self) -> tuple[list[str], bool]:
-        """Convert this definition to Python code."""
-        output: list[str] = []
-
-        if self.kind != "object":
-            output.append(
-                f'# Defined Type: {self.name} -> {XcresultType(self.name).python_type("")}'
-            )
-            return output, False
-
-        class_line = f"class {self.name}"
-        if (
-            self.supertype is not None  # pyright: ignore[reportUnnecessaryComparison]
-            and self.name != "XcresultObject"
-        ):
-            class_line += f"({self.supertype})"
-        class_line += ":"
-        output.append(class_line)
-
-        return output, True
-
-    def _generate_doc_comment(self) -> list[str]:
-        """Generate the doc comment for this definition."""
-        output: list[str] = []
-
-        if self.original:
-            output.append('    """Generated from xcresulttool format description.')
-            output.append("")
-            for line in self.original:
-                output.append(f"    {line}")
-            output.append('    """')
-            output.append("")
-        else:
-            output.append('    """Generated from xcresulttool format description."""')
-
-        for name, ptype in self.properties:
-            xctype = XcresultType(ptype)
-            python_type = xctype.python_type(self.name)
-            output.append(f"    {name}: {python_type}")
-
-        return output
-
-    def _add_additional_methods(self) -> list[str]:
-        output: list[str] = []
-
-        additional_methods_path = os.path.join(
-            os.path.dirname(os.path.abspath(__file__)),
-            "additional_methods",
-            f"{self.name}.py",
-        )
-        if not os.path.exists(additional_methods_path):
-            return output
-
-        output.append("")
-        with open(additional_methods_path, encoding="utf-8") as additional_methods_file:
-            for line in additional_methods_file.readlines():
-                stripped = line.rstrip()
-                if len(stripped) > 0:
-                    output.append("    " + line.rstrip())
-                else:
-                    output.append("")
-
-        return output
-
-    def _add_dunder_methods(self) -> list[str]:
-        output: list[str] = [""]
-
-        if len(self.properties) > 0 or self.name == "XcresultObject":
-            output.append("    def _members(self) -> tuple[Any, ...]:")
-            if self.name == "XcresultObject":
-                output.append("        return ()")
-            else:
-                output.append("        properties: list[Any] = [")
-                for name, _ in self.properties:
-                    output.append(f"            self.{name},")
-                output.append("        ]")
-                output.append("        return tuple(properties + list(super()._members()))")
-
-            output.append("")
-
-        output.append("    def __eq__(self, other: Any) -> bool:")
-        output.append("        if not isinstance(other, self.__class__):")
-        output.append("            return False")
-        output.append("")
-        output.append("        # pylint: disable=protected-access")
-        output.append("        return self._members() == other._members()")
-        output.append("        # pylint: enable=protected-access")
-        output.append("")
-
-        output.append("    def __hash__(self) -> int:")
-        output.append("        return xchash(self)")
-        output.append("")
-
-        return output
-
-    def python(self) -> list[str]:
-        """Convert this definition to Python code.
-
-        :returns: The Python code
-        """
-        output: list[str] = []
-
-        next_output, should_continue = self._generate_definition_header()
-        output.extend(next_output)
-
-        if not should_continue:
-            return output
-
-        output.extend(self._generate_doc_comment())
-        output.extend(self._add_additional_methods())
-        output.extend(self._add_dunder_methods())
-
-        return output
-
-    @staticmethod
-    def from_format_description(lines: list[str]) -> "Definition":
-        """Convert the output of xcrun xcresulttool formatDescription to a Definition.
-
-        :param lines: The lines to convert
-
-        :returns: The Definition
-        """
-        lines = dedent(lines)
-        original = lines[:]
-        name_line = lines.pop(0)
-        assert name_line.startswith("- ")
-        name = name_line[2:].strip()
-        kind = None
-        supertype = None
-        properties: list[tuple[str, str]] = []
-        for line in lines:
-            line = line.strip()
-            components = line[2:].split(":")
-            key = components[0].strip()
-            value = ":".join(components[1:])
-
-            if line.startswith("* "):
-                if key == "Kind":
-                    kind = value.strip()
-                    continue
-
-                if key == "Supertype":
-                    supertype = value.strip()
-                    continue
-
-                if key == "Properties":
-                    continue
-
-                raise Exception("Unexpected line")
-
-            if line.startswith("+ "):
-                properties.append((key.strip(), value.strip()))
-                continue
-
-            raise Exception("Unexpected line")
-
-        return Definition(name, kind, supertype, properties, original)
-
-
-def get_definitions(format_description: str) -> list[Definition]:
-    """Get the definitions from the output of xcrun xcresulttool formatDescription.
-
-    :param format_description: The output of xcrun xcresulttool formatDescription
-
-    :returns: The list of Definitions
-    """
-    root_properties = {}
-    definitions = [Definition("XcresultObject", "object", None, [])]
-    buffer = []
-
-    lines = [line for line in format_description.split("\n") if len(line.strip()) > 0]
-
-    while True:
-        if len(lines) == 0:
-            definitions.append(Definition.from_format_description(buffer))
-            break
-
-        line = lines.pop(0)
-        indentation = get_indentation(line)
-        if indentation == 0:
-            components = line.split(": ")
-            if components[0] == "Types:":
-                continue
-            root_properties[components[0]] = ": ".join(components[1:])
-            continue
-
-        if indentation == 1 and len(buffer) != 0:
-            definitions.append(Definition.from_format_description(buffer))
-            buffer = [line]
-            continue
-
-        buffer.append(line)
-
-    return definitions
-
-
-def order_definitions(definitions: list[Definition]) -> list[Definition]:
-    """Order definitions such that any dependencies are defined before they are used.
-
-    :param definitions: The definitions to order
-
-    :returns: The ordered definitions
-    """
-    all_output: list[Definition] = []
-    definition_dict = {definition.name: definition for definition in definitions}
-    dependency_types = {
-        definition.name: set(definition.dependency_types()) for definition in definitions
+    corrected = deepcopy(document)
+    corrections: dict[tuple[str, ...], tuple[str, str, str]] = {
+        ("get", "test-results", "summary"): (
+            "Summary",
+            "devicesAndConfigurations",
+            "DeviceAndConfigurationSummary",
+        ),
+        ("get", "test-results", "activities"): ("Activities", "testRuns", "TestRunActivities"),
     }
-
-    while len(dependency_types) > 0:
-        keys_to_delete: list[str] = []
-        output: list[Definition] = []
-
-        for key, values in dependency_types.items():
-            if len(values) > 1:
-                continue
-
-            if len(values) == 1 and list(values)[0] != key:
-                continue
-
-            output.append(definition_dict[key])
-            keys_to_delete.append(key)
-
-        for key in keys_to_delete:
-            del dependency_types[key]
-
-            for subkey in dependency_types.keys():
-                if key in dependency_types[subkey]:
-                    dependency_types[subkey].remove(key)
-
-            continue
-
-        output.sort(key=lambda d: (0 if d.kind == "value" else 1, d.kind, d.name))
-        all_output.extend(output)
-
-    return all_output
+    if endpoint not in corrections:
+        return corrected
+    model, field, target = corrections[endpoint]
+    schemas = _mapping(corrected.get("schemas"), "schemas")
+    definition = _mapping(schemas.get(model), model)
+    properties = _mapping(definition.get("properties"), f"{model}.properties")
+    reference = {"$ref": f"#/schemas/{target}"}
+    array = {"type": "array", "items": reference}
+    if properties.get(field) not in (reference, array):
+        raise SchemaError(f"{model}.{field}: verified schema correction no longer applies")
+    properties[field] = array
+    return corrected
 
 
-def generate(output_path: str):
-    """Generate the models for xcresulttool.
-
-    :param output_path: The path to write the models to
-    """
-    output = subprocess.run(
-        ["xcrun", "xcresulttool", "formatDescription", "--legacy"],
-        check=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        encoding="utf-8",
-    ).stdout
-
-    definitions = get_definitions(output)
-    definitions = order_definitions(definitions)
-
-    with open(output_path, "w", encoding="utf-8") as output_file:
-        output_file.write('"""Autogenerated models for xcresulttool."""\n\n')
-        output_file.write("import datetime\n")
-        output_file.write("import sys\n")
-        output_file.write("from typing import Any, Optional\n")
-        output_file.write("import urllib.parse\n")
-        output_file.write("\n\n")
-        output_file.write("# pylint: disable=too-many-lines\n")
-        output_file.write("# pylint: disable=invalid-name\n")
-        output_file.write("\n")
-
-        output_file.write("def flatten(list_of_lists: list[Any]) -> list[Any]:\n")
-        output_file.write('    """Flatten a list of lists."""\n')
-        output_file.write("    return [item for sublist in list_of_lists for item in sublist]\n")
-        output_file.write("\n")
-
-        output_file.write("def xchash(item: Any) -> int:\n")
-        output_file.write('    """Generate a hash for an object."""\n')
-        output_file.write("    all_hashes: list[int] = []\n")
-        output_file.write("\n")
-        output_file.write("    if isinstance(item, list):\n")
-        output_file.write("        for sub_item in item:  # type: ignore[var-annotated]\n")
-        output_file.write("            all_hashes.append(xchash(sub_item))\n")
-        output_file.write("        return hash(tuple(all_hashes))\n")
-        output_file.write("\n")
-        output_file.write("    if isinstance(item, dict):\n")
-        output_file.write(
-            "        for key, value in item.items():  # type: ignore[var-annotated]\n"
-        )
-        output_file.write("            all_hashes.append(xchash(key))\n")
-        output_file.write("            all_hashes.append(xchash(value))\n")
-        output_file.write("        return hash(tuple(all_hashes))\n")
-        output_file.write("\n")
-        output_file.write('    if not hasattr(item, "_members"):\n')
-        output_file.write("        return hash(item)\n")
-        output_file.write("\n")
-        output_file.write('    members_call = getattr(item, "_members", None)\n')
-        output_file.write("    if members_call is None:\n")
-        output_file.write("        return hash(item)\n")
-        output_file.write("\n")
-        output_file.write("    for member in members_call():\n")
-        output_file.write("        all_hashes.append(xchash(member))\n")
-        output_file.write("\n")
-        output_file.write("    return hash(tuple(all_hashes))\n")
-        output_file.write("\n")
-
-        for definition in definitions:
-            for line in definition.python():
-                output_file.write(line + "\n")
-            output_file.write("\n\n")
-        output_file.write("\n")
-
-        output_file.write("_CURRENT_MODULE = sys.modules[__name__]\n")
-        output_file.write("_model_names: list[str] = dir(_CURRENT_MODULE)\n")
-        output_file.write('_model_names = [m for m in _model_names if not m.startswith("__")]\n')
-        output_file.write(
-            "_resolved_models: list[Any] = [getattr(_CURRENT_MODULE, m) for m in _model_names]\n"
-        )
-        output_file.write("# pylint: disable=unidiomatic-typecheck\n")
-        output_file.write("_resolved_models = [\n")
-        output_file.write("    m\n")
-        output_file.write("    for m in _resolved_models\n")
-        output_file.write("    if type(m) == type(type) and issubclass(m, XcresultObject)\n")
-        output_file.write("]\n")
-        output_file.write("# pylint: enable=unidiomatic-typecheck\n")
-        output_file.write(
-            "MODELS: dict[str, type[XcresultObject]] = {m.__name__: m for m in _resolved_models}\n"
-        )
+def load_schemas() -> list[dict[str, object]]:
+    """Fetch each modern schema and disambiguate endpoint-specific type names."""
+    documents: list[dict[str, object]] = []
+    for endpoint in ENDPOINTS:
+        command = [
+            "xcrun",
+            "xcresulttool",
+            *endpoint,
+            "--schema",
+            "--schema-version",
+            SCHEMA_VERSION,
+        ]
+        completed = subprocess.run(command, check=True, capture_output=True, text=True)
+        document: dict[str, object] = _mapping(json.loads(completed.stdout), "document")
+        document = correct_schema_errors(document, endpoint)
+        if endpoint[-1] == "activities":
+            schemas = _mapping(document.get("schemas"), "schemas")
+            renames = {"Attachment": "ActivityAttachment"}
+            document = {
+                "schemas": {
+                    renames.get(name, name): _rename_references(schema, renames)
+                    for name, schema in schemas.items()
+                }
+            }
+        documents.append(document)
+    return documents
 
 
-if __name__ == "__main__":
-    generate(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "xcresult", "model.py")))
+class ModelGenerator:
+    """Resolve modern JSON schemas without merging incompatible definitions."""
+
+    def __init__(self, documents: list[dict[str, object]]) -> None:
+        """Copy and register the named definitions from all endpoint documents."""
+        self.schemas: dict[str, dict[str, object]] = {}
+        self.classes: dict[str, str] = {}
+        self.aliases: dict[str, str] = {}
+        self.alias_dependencies: dict[str, set[str]] = {}
+        for document in documents:
+            if set(document) != {"schemas"}:
+                raise SchemaError("Expected a document containing only 'schemas'")
+            for name, schema in _mapping(document["schemas"], "schemas").items():
+                self._register(name, _mapping(schema, name))
+
+    def _register(self, name: str, schema: dict[str, object]) -> None:
+        """Register one schema, rejecting incompatible named or inline duplicates."""
+        _type_name(name)
+        if name in self.schemas and self.schemas[name] != schema:
+            raise SchemaError(f"Incompatible duplicate schema definition: {name}")
+        self.schemas[name] = deepcopy(schema)
+
+    def _validate(self, schema: dict[str, object], path: str) -> None:
+        """Reject unknown constructs rather than silently weakening their types."""
+        metadata = {"description", "title", "deprecated", "format"}
+        kind = schema.get("type")
+        allowed = metadata | {"type"}
+        if "$ref" in schema:
+            allowed = metadata | {"$ref"}
+        elif kind == "object":
+            allowed |= {"properties", "required"}
+        elif kind == "array":
+            allowed |= {"items"}
+        elif kind == "string":
+            allowed |= {"enum"}
+        elif kind not in ("integer", "number", "boolean", "null"):
+            raise SchemaError(f"{path}: unsupported schema type {kind!r}")
+        unknown = set(schema) - allowed
+        if unknown:
+            raise SchemaError(f"{path}: unsupported schema keywords {sorted(unknown)}")
+
+    def _annotation(self, schema: dict[str, object], name: str, owner: str) -> str:
+        """Resolve references and recursively register inline object definitions."""
+        self._validate(schema, name)
+        if "$ref" in schema:
+            reference = schema["$ref"]
+            if not isinstance(reference, str) or not reference.startswith("#/schemas/"):
+                raise SchemaError(f"{name}: unsupported reference {reference!r}")
+            target = reference.removeprefix("#/schemas/")
+            if target not in self.schemas:
+                raise SchemaError(f"{name}: unresolved reference {reference}")
+            self.alias_dependencies.setdefault(owner, set()).add(target)
+            return target
+        kind = schema.get("type")
+        if kind == "object":
+            self._register(name, schema)
+            return name
+        if kind == "array":
+            item = _mapping(schema.get("items"), f"{name}.items")
+            return f"list[{self._annotation(item, name + 'Item', owner)}]"
+        if kind == "string" and "enum" in schema:
+            values = schema["enum"]
+            if not isinstance(values, list) or not values:
+                raise SchemaError(f"{name}: enum must be a nonempty array of strings")
+            members = cast(list[object], values)
+            if not all(isinstance(item, str) for item in members):
+                raise SchemaError(f"{name}: only string enums are supported")
+            return "Literal[" + ", ".join(repr(item) for item in members) + "] | str"
+        return {
+            "string": "str",
+            "integer": "int",
+            "number": "float",
+            "boolean": "bool",
+            "null": "NoneType",
+        }[str(kind)]
+
+    def _class(self, name: str, schema: dict[str, object]) -> str:
+        """Render keyword-only fields while preserving schema requiredness."""
+        properties = _mapping(schema.get("properties", {}), f"{name}.properties")
+        raw_required = schema.get("required", [])
+        if not isinstance(raw_required, list):
+            raise SchemaError(f"{name}.required: expected an array")
+        required = cast(list[object], raw_required)
+        if any(not isinstance(item, str) or item not in properties for item in required):
+            raise SchemaError(f"{name}.required: unknown or invalid property")
+        lines = [
+            "@dataclass(kw_only=True)",
+            f"class {name}(XcresultObject):",
+            f'    """Modern xcresulttool {name} data."""',
+        ]
+        for field, raw_schema in properties.items():
+            _name(field)
+            field_schema = _mapping(raw_schema, f"{name}.{field}")
+            annotation = self._annotation(field_schema, name + field[0].upper() + field[1:], name)
+            if field not in required:
+                annotation = f"{annotation} | None = None"
+            lines.append(f"    {field}: {annotation}")
+        return "\n".join(lines)
+
+    def render(self) -> str:
+        """Render all classes, followed by dependency-ordered scalar/array aliases."""
+        while pending := [name for name in self.schemas if name not in self.classes | self.aliases]:
+            for name in pending:
+                schema = self.schemas[name]
+                self._validate(schema, name)
+                if schema.get("type") == "object":
+                    self.classes[name] = self._class(name, schema)
+                else:
+                    self.aliases[name] = self._annotation(schema, name, name)
+        imports = "from dataclasses import dataclass\nfrom typing import Literal, TypeAlias"
+        if any("NoneType" in value for value in (*self.classes.values(), *self.aliases.values())):
+            imports += "\nfrom types import NoneType"
+        sections = [
+            '"""Generated by python -m generator from modern xcresulttool schemas.\n\n'
+            "Do not edit manually. Enum strings are decoded forward-compatibly.\n"
+            "Summary.devicesAndConfigurations and Activities.testRuns use verified wire arrays;\n"
+            'see generator.correct_schema_errors for the Apple schema corrections and evidence.\n"""',
+            "from __future__ import annotations",
+            "# Apple JSON property names are intentionally preserved.\n# pylint: disable=invalid-name",
+            imports,
+            "from xcresult.model_base import XcresultObject",
+            f'SCHEMA_VERSION = "{SCHEMA_VERSION}"',
+            *self.classes.values(),
+        ]
+        emitted = set(self.classes)
+        remaining = dict(self.aliases)
+        while remaining:
+            ready = [
+                name for name in remaining if self.alias_dependencies.get(name, set()) <= emitted
+            ]
+            if not ready:
+                raise SchemaError(f"Recursive aliases cannot be resolved: {sorted(remaining)}")
+            for name in ready:
+                sections.append(f"{name}: TypeAlias = {remaining.pop(name)}")
+                emitted.add(name)
+        sections.append("__all__ = " + repr(["SCHEMA_VERSION", *self.schemas]))
+        return "\n\n\n".join(sections) + "\n"
+
+
+def generate(output_path: str | Path = "xcresult/model.py") -> None:
+    """Fetch endpoint schemas and persist a Black-formatted Python model module."""
+    import black  # pylint: disable=import-outside-toplevel
+
+    source = ModelGenerator(load_schemas()).render()
+    formatted = black.format_str(source, mode=black.Mode(line_length=100))
+    Path(output_path).write_text(formatted, encoding="utf-8")

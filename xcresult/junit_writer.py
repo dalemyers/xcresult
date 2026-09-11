@@ -1,42 +1,118 @@
-"""Junit writer for writing out the results of tests."""
+"""JUnit reports built from modern xcresult test trees and individual runs."""
 
 # pylint: disable=c-extension-no-member
 
+from collections.abc import Callable, Iterator
+from dataclasses import dataclass, replace
+import logging
 import os
-from typing import Callable, cast
+from pathlib import Path
+import re
+
 from lxml import etree as ET
 
-from xcresult.model import (
-    ActionTestMetadata,
-    ActionTestSummary,
-    ActionTestSummaryIdentifiableObject,
-    ActionTestableSummary,
-    ActionTestPlanRunSummaries,
-)
+from xcresult.model import Attachment, TestAttachmentDetails, TestDetails, TestNode
 from xcresult.xcresult_base import XcresultsBase
-from xcresult.xcresulttool import deserialize
 
-# lxml exposes its element type only via the underscore-prefixed name.
 Element = ET._Element  # pylint: disable=protected-access  # pyright: ignore[reportPrivateUsage]
+TestFilter = Callable[[TestNode], bool]
+_EXECUTION_DIMENSIONS = {"Device", "Test Plan Configuration", "Arguments", "Repetition"}
 
-# A predicate used to decide whether a single test should appear in the report.
-# It receives a test leaf and must return ``True`` to keep it or ``False`` to
-# omit it entirely (it is then excluded from the emitted XML and from all
-# tests/failures/skipped counts). Both ``identifier`` (e.g. "Class/testMethod()")
-# and ``name`` are available on the supplied object for matching.
-TestFilter = Callable[[ActionTestSummaryIdentifiableObject], bool]
+
+def _walk(nodes: list[TestNode]) -> Iterator[TestNode]:
+    """Walk a modern test tree in report order.
+
+    :param nodes: Roots of the tree.
+    :returns: Each node, including roots.
+    """
+    for node in nodes:
+        yield node
+        yield from _walk(node.children or [])
+
+
+def _seconds(node: TestNode) -> float:
+    """Read numeric seconds, falling back to Apple's formatted duration.
+
+    :param node: A test or run node.
+    :returns: Duration in seconds.
+    """
+    if node.durationInSeconds is not None:
+        return node.durationInSeconds
+    if node.duration is None:
+        return 0.0
+    duration = node.duration.replace(",", ".")
+    parts = re.findall(r"(\d+(?:\.\d+)?)\s*(ms|d|h|m|s)", duration)
+    remainder = re.sub(r"(\d+(?:\.\d+)?)\s*(ms|d|h|m|s)", "", duration).strip()
+    if not parts or remainder:
+        raise ValueError(f"Unrecognized test duration: {node.duration!r}")
+    units = {"d": 86400, "h": 3600, "m": 60, "s": 1, "ms": 0.001}
+    return sum(float(value) * units[unit] for value, unit in parts)
+
+
+@dataclass(frozen=True)
+class _Run:
+    """A test attempt and the dimensions that distinguish it from other runs."""
+
+    test: TestNode
+    node: TestNode
+    suite: str
+    configuration: str
+    device: str
+    arguments: tuple[str, ...]
+    repetition: int | None = None
+
+
+def _context(run: _Run, node: TestNode) -> _Run:
+    """Apply an execution dimension to an attempt's context.
+
+    :param run: Current attempt context.
+    :param node: Node carrying execution metadata.
+    :returns: Updated context.
+    """
+    if node.nodeType == "Device":
+        return replace(run, device=node.nodeIdentifier or node.name)
+    if node.nodeType == "Test Plan Configuration":
+        return replace(run, configuration=node.name)
+    if node.nodeType == "Arguments":
+        return replace(run, arguments=(*run.arguments, node.name))
+    if node.nodeType == "Repetition":
+        identifier = node.nodeIdentifier
+        if identifier is None:
+            logging.warning(
+                "Repetition %s has no identifier; attachments cannot be narrowed by attempt",
+                node.name,
+            )
+            return replace(run, repetition=None)
+        if not identifier.isdecimal():
+            raise ValueError(f"Invalid repetition identifier: {identifier!r}")
+        return replace(run, repetition=int(identifier))
+    return run
+
+
+def _matches_attachment(run: _Run, attachment: Attachment) -> bool:
+    """Check the execution dimensions recorded by the export manifest.
+
+    :param run: Selected test attempt.
+    :param attachment: Exported file metadata.
+    :returns: Whether the attachment belongs to this environment and attempt.
+    """
+    return (
+        (not run.configuration or attachment.configurationName == run.configuration)
+        and (not run.device or run.device in {attachment.deviceId, attachment.deviceName})
+        and (
+            run.repetition is None
+            or attachment.repetitionNumber is None
+            or run.repetition == attachment.repetitionNumber
+        )
+        and (
+            attachment.arguments is None
+            or ", ".join(attachment.arguments) == ", ".join(run.arguments)
+        )
+    )
 
 
 class JunitWriter:
-    """Junit writer for writing out the results of tests."""
-
-    results: XcresultsBase
-    junit_path: str
-    export_attachments_path: str | None
-    test_class_prefix: str | None
-    test_class_suffix: str | None
-    collapse_retries: bool
-    test_filter: TestFilter | None
+    """Write one testcase per run, optionally collapsing retries."""
 
     # pylint: disable=too-many-positional-arguments
     def __init__(
@@ -57,298 +133,246 @@ class JunitWriter:
         self.collapse_retries = collapse_retries
         self.test_filter = test_filter
 
-    # pylint: enable=too-many-positional-arguments
+    def _tests(
+        self, nodes: list[TestNode], parents: tuple[str, ...] = ()
+    ) -> Iterator[tuple[TestNode, str]]:
+        """Find test cases without interpreting their diagnostic children as tests.
 
-    def _collapse_retry_indices(
-        self,
-        tests: list[ActionTestSummaryIdentifiableObject],
-    ) -> set[int]:
-        """Collapse retry attempts of the same test down to one representative.
-
-        Under ``xcodebuild ... -retry-tests-on-failure`` a test that fails and is
-        retried appears as multiple leaves sharing one ``identifier``. Emitting a
-        ``<testcase>`` per attempt inflates the totals and duplicates the test.
-        This keeps a single representative per identifier: a successful attempt if
-        any passed (a flaky pass), otherwise a failing attempt, otherwise the
-        first attempt (e.g. all skipped).
-
-        Leaves without an identifier cannot be matched to their retries, so each
-        is kept as its own entry.
-
-        Positions are returned rather than the leaves themselves so that the
-        caller can tell which of several equal (or even identical) leaves was
-        picked, without relying on object identity.
-
-        :param tests: The flattened test leaves for a single testable summary.
-
-        :returns: The indices into ``tests`` of the leaves to keep, one per
-            distinct identifier.
+        :param nodes: Test tree roots.
+        :param parents: Enclosing bundle and suite names.
+        :returns: Test case and suite name pairs.
         """
+        for node in nodes:
+            if node.nodeType == "Test Case":
+                yield node, "/".join(parents) or "Tests"
+                continue
+            next_parents = parents
+            if node.nodeType in {"Unit test bundle", "UI test bundle", "Test Suite"}:
+                next_parents = (*parents, node.name)
+            yield from self._tests(node.children or [], next_parents)
 
-        order: list[str] = []
-        attempts_by_key: dict[str, list[int]] = {}
+    def _runs(self, test: TestNode, suite: str, details: TestDetails) -> list[_Run]:
+        """Extract individual attempts from a details report.
 
-        for index, test in enumerate(tests):
-            # Key un-identified leaves by position so they never merge.
-            key = test.identifier if test.identifier is not None else f"\x00{index}"
-            if key not in attempts_by_key:
-                attempts_by_key[key] = []
-                order.append(key)
-            attempts_by_key[key].append(index)
-
-        retained: set[int] = set()
-        for key in order:
-            attempts = attempts_by_key[key]
-            # A pass on any attempt wins (flaky pass); otherwise the first real
-            # failure; otherwise the first attempt (covers an all-skipped group).
-            chosen = next(
-                (i for i in attempts if getattr(tests[i], "testStatus", None) == "Success"),
-                None,
-            )
-            if chosen is None:
-                chosen = next(
-                    (i for i in attempts if getattr(tests[i], "testStatus", None) != "Skipped"),
-                    None,
-                )
-            if chosen is None:
-                chosen = attempts[0]
-            retained.add(chosen)
-
-        return retained
-
-    def generate_test_case(
-        self,
-        suite: Element,
-        test: ActionTestMetadata,
-    ) -> tuple[int, int, int]:
-        """Generate the XML for a test case.
-
-        :param suite: The suite to add the test case to
-        :param test: The test to generate the XML for
-
-        :returns: A tuple of the number of tests, failures and skipped tests
+        :param test: Test case node.
+        :param suite: Enclosing suite name.
+        :param details: Modern test details.
+        :returns: Attempts in report order.
         """
-
-        test_case = ET.SubElement(suite, "testcase")  # type: ignore[arg-type]
-        test_case_identifier = test.identifier or "Unknown Test"
-        test_case_identifier = test_case_identifier.split("/", maxsplit=1)[0]
-
-        if self.test_class_prefix:
-            test_case_identifier = f"{self.test_class_prefix}.{test_case_identifier}"
-
-        if self.test_class_suffix:
-            test_case_identifier = f"{test_case_identifier}.{self.test_class_suffix}"
-
-        test_case.set("classname", test_case_identifier)
-        test_case.set("name", test.name or "Unknown Test")
-        test_case.set("time", str(test.duration))
-
-        if test.testStatus == "Success":
-            return 1, 0, 0
-
-        if test.testStatus == "Skipped":
-            _ = ET.SubElement(test_case, "skipped")
-            return 1, 0, 1
-
-        if test.summaryRef is None:
-            failure_element = ET.SubElement(test_case, "failure")
-            failure_element.set("message", "Unknown failure due to missing summary ref.")
-            return 1, 1, 0
-
-        base_failure = cast(ActionTestSummary, deserialize(self.results.get(test.summaryRef.id)))
-
-        for failure in base_failure.failureSummaries:
-            if (
-                failure.sourceCodeContext is None
-                or failure.sourceCodeContext.location is None
-                or failure.sourceCodeContext.location.filePath is None
-            ):
-                line = "Unknown location"
-            else:
-                line = failure.sourceCodeContext.location.filePath
-                line += f"#EndingLineNumber={failure.sourceCodeContext.location.lineNumber}&"
-                line += f"StartingLineNumber={failure.sourceCodeContext.location.lineNumber}"
-            failure_element = ET.SubElement(test_case, "failure")
-            failure_element.set("message", f"{failure.message} ({line})")
-
-        if not self.export_attachments_path:
-            return 1, 1, 0
-
-        assert (
-            test.identifierURL is not None
-        ), f"Test identifier URL is None for test {test_case_identifier}. Unable to export attachments."
-
-        test_attachments_relative_path = test.identifierURL.replace("test://com.apple.xcode/", "")
-        test_attachments_path = os.path.join(
-            self.export_attachments_path, test_attachments_relative_path
+        configuration = (
+            details.testPlanConfigurations[0].configurationName
+            if len(details.testPlanConfigurations) == 1
+            else ""
         )
+        device = details.devices[0].deviceId if len(details.devices) == 1 else ""
+        initial = _Run(test, test, suite, configuration, device, ())
+        runs: list[_Run] = []
 
-        cdata = []
+        def visit(nodes: list[TestNode], context: _Run) -> None:
+            """Collect attempts while retaining enclosing execution dimensions."""
+            for node in nodes:
+                current = _context(context, node)
+                children = [
+                    child
+                    for child in node.children or []
+                    if child.nodeType in _EXECUTION_DIMENSIONS
+                    or (
+                        child.nodeType == "Test Case Run"
+                        and (child.durationInSeconds is not None or child.duration is not None)
+                    )
+                ]
+                if children and node.nodeType != "Test Case Run":
+                    visit(children, current)
+                    continue
+                if node.nodeType in _EXECUTION_DIMENSIONS | {"Test Case Run"}:
+                    if node.nodeType == "Test Case Run":
+                        for child in _walk(node.children or []):
+                            current = _context(current, child)
+                    if not current.configuration and len(details.testPlanConfigurations) > 1:
+                        raise ValueError(
+                            f"Missing configuration for run of {details.testIdentifier}"
+                        )
+                    if not current.device and len(details.devices) > 1:
+                        raise ValueError(f"Missing device for run of {details.testIdentifier}")
+                    runs.append(replace(current, node=node))
+                else:
+                    visit(node.children or [], current)
 
-        for attachment_name in os.listdir(test_attachments_path):
-            attachment_path = os.path.join(test_attachments_path, attachment_name)
-            coverage_relative_path = os.path.relpath(
-                attachment_path, os.path.dirname(self.junit_path)
+        source = details.testRuns
+        # The tests tree preserves repetitions even when the details report
+        # reduces them to destination/configuration aggregates.
+        if any(node.nodeType == "Repetition" for node in _walk(test.children or [])) and not any(
+            node.nodeType == "Repetition" for node in _walk(source)
+        ):
+            source = test.children or []
+        visit(source, initial)
+        if runs:
+            return runs
+        # Skipped tests can have no individual runs. The details report still
+        # carries an explicit outcome; preserve it rather than inventing a pass.
+        if details.testRuns:
+            raise ValueError(f"No test case runs found for {details.testIdentifier}")
+        return [
+            replace(
+                initial,
+                node=replace(
+                    test,
+                    result=details.testResult,
+                    duration=details.duration,
+                    durationInSeconds=details.durationInSeconds,
+                ),
             )
-            cdata.append(f"[[ATTACHMENT|{coverage_relative_path}]]")  # type: ignore[arg-type]
-
-        system_out = ET.SubElement(test_case, "system-out")
-        system_out.text = ET.CDATA("\n" + "\n".join(cdata) + "\n")  # type: ignore[arg-type]
-
-        return 1, 1, 0
-
-    def generate_test_suite(
-        self,
-        root: Element,
-        summary: ActionTestableSummary,
-        configuration_name: str,
-    ) -> tuple[int, int, int]:
-        """Generate the test suite.
-
-        A ``<testsuite>`` is emitted per top level group in the testable summary,
-        except for groups which contribute no test cases at all (either because
-        they were empty, or because collapsing and filtering removed every leaf).
-
-        :param root: The ``<testsuites>`` element to add the suites to
-        :param summary: The testable summary to generate the suites for
-        :param configuration_name: The name of the configuration the tests ran in
-
-        :returns: A tuple of the number of tests, failures and skipped tests
-        """
-
-        total_tests = 0
-        total_failures = 0
-        total_skipped = 0
-
-        # Flatten every top level group up front. `summary.tests` is typed as the
-        # base identifiable object (generated model); the runtime elements are
-        # groups/metadata that implement all_subtests.
-        groups = list(summary.tests or [])
-        group_subtests = [
-            cast(
-                list[ActionTestSummaryIdentifiableObject],
-                group.all_subtests(),  # type: ignore[attr-defined]
-            )
-            for group in groups
         ]
 
-        # Retries have to be collapsed across the whole testable summary rather
-        # than per top level group. `xcodebuild ... -retry-tests-on-failure`
-        # records the initial run and the retries in *separate* groups ("All
-        # tests" and "Selected tests"), and starts another group whenever the
-        # test host crashes. Collapsing per group would leave the stale first
-        # attempt behind, so a test that crashed once and then passed on every
-        # retry would still be reported as a failure. Survivors are tracked by
-        # their position in the flattened list, so each one stays in the group it
-        # actually ran in.
-        retained_indices: set[int] | None = None
-        if self.collapse_retries:
-            retained_indices = self._collapse_retry_indices(
-                [subtest for subtests in group_subtests for subtest in subtests]
-            )
+    def _collapse(self, runs: list[_Run]) -> list[_Run]:
+        """Keep a winning attempt within each test and execution environment.
 
-        group_start = 0
+        :param runs: All attempts.
+        :returns: Selected attempts in their original order.
+        """
+        winners: dict[tuple[object, ...], int] = {}
+        rank = {"Passed": 3, "Expected Failure": 3, "Failed": 2, "Skipped": 1}
+        for index, run in enumerate(runs):
+            identifier = run.test.nodeIdentifierURL or run.test.nodeIdentifier
+            key = (identifier or index, run.suite, run.configuration, run.device, run.arguments)
+            previous = winners.get(key)
+            if previous is None or rank.get(run.node.result or "", 2) > rank.get(
+                runs[previous].node.result or "", 2
+            ):
+                winners[key] = index
+        retained = set(winners.values())
+        return [run for index, run in enumerate(runs) if index in retained]
 
-        for test, group_leaves in zip(groups, group_subtests):
-            subtests = group_leaves
-            if retained_indices is not None:
-                subtests = [
-                    subtest
-                    for index, subtest in enumerate(group_leaves, start=group_start)
-                    if index in retained_indices
-                ]
-            group_start += len(group_leaves)
+    def _attachment_paths(self, run: _Run, manifest: list[TestAttachmentDetails]) -> list[str]:
+        """Resolve exported filenames using the manifest, never guessed directories.
 
-            # Drop any tests the caller asked to exclude. Doing it here keeps the
-            # emitted XML and the suite/root counts consistent without a second
-            # pass over the document.
-            if self.test_filter is not None:
-                subtests = [subtest for subtest in subtests if self.test_filter(subtest)]
-
-            # Collapsing moves a test into the group its winning attempt ran in,
-            # which can empty out a retry group entirely. Emitting a suite with no
-            # test cases in it would just be noise, so skip it.
-            if not subtests:
+        :param run: Test attempt.
+        :param manifest: Exported attachments.
+        :returns: Attachment paths relative to the JUnit file.
+        """
+        if self.export_attachments_path is None:
+            return []
+        root = Path(self.export_attachments_path).resolve()
+        paths: list[str] = []
+        for entry in manifest:
+            if run.test.nodeIdentifierURL and entry.testIdentifierURL:
+                matches = run.test.nodeIdentifierURL == entry.testIdentifierURL
+            else:
+                matches = run.test.nodeIdentifier == entry.testIdentifier
+            if not matches:
                 continue
+            for attachment in entry.attachments:
+                if not _matches_attachment(run, attachment):
+                    continue
+                path = (root / attachment.exportedFileName).resolve()
+                if not path.is_relative_to(root):
+                    raise ValueError(f"Attachment path escapes export directory: {path}")
+                if not path.is_file():
+                    raise FileNotFoundError(f"Exported attachment is missing: {path}")
+                relative = os.path.relpath(path, Path(self.junit_path).parent)
+                if relative not in paths:
+                    paths.append(relative)
+        return paths
 
-            suite = ET.SubElement(root, "testsuite")  # type: ignore[arg-type]
-            suite.set("name", f"{summary.name}/{test.identifier}" or "Unknown Suite")
+    def _testcase(
+        self, suite: Element, run: _Run, manifest: list[TestAttachmentDetails]
+    ) -> tuple[int, int]:
+        """Write a testcase and its diagnostics.
 
-            # We get an identifiable, but that "protocol" isn't guaranteed to have a duration
-            suite.set("time", str(getattr(test, "duration", 0)))
-
-            properties = ET.SubElement(suite, "properties")
-            configuration = ET.SubElement(properties, "property")
-            configuration.set("name", "Configuration")
-            configuration.set("value", configuration_name)
-
-            suite_total_tests = 0
-            suite_total_failures = 0
-            suite_total_skipped = 0
-
-            for subtest in subtests:
-                if not isinstance(subtest, ActionTestMetadata):
-                    raise TypeError(f"Expected ActionTestMetadata, got {type(subtest)}")
-
-                test_count, failure_count, skipped_count = self.generate_test_case(suite, subtest)
-                suite_total_tests += test_count
-                suite_total_failures += failure_count
-                suite_total_skipped += skipped_count
-
-            suite.set("tests", str(suite_total_tests))
-            suite.set("failures", str(suite_total_failures))
-            suite.set("skipped", str(suite_total_skipped))
-
-            total_tests += suite_total_tests
-            total_failures += suite_total_failures
-            total_skipped += suite_total_skipped
-
-        return total_tests, total_failures, total_skipped
+        :param suite: Parent XML element.
+        :param run: Selected test attempt.
+        :param manifest: Export manifest.
+        :returns: Failure and skipped counts.
+        """
+        identifier = run.test.nodeIdentifier or run.test.name
+        classname = identifier.rsplit("/", maxsplit=1)[0]
+        classname = ".".join(
+            part for part in (self.test_class_prefix, classname, self.test_class_suffix) if part
+        )
+        case = ET.SubElement(
+            suite, "testcase", classname=classname, name=run.test.name, time=str(_seconds(run.node))
+        )
+        status = run.node.result
+        failures = 0
+        skipped = 0
+        messages: list[str]
+        if status == "Skipped":
+            skipped = 1
+            messages = [
+                node.name
+                for node in _walk(run.node.children or [])
+                if node.nodeType == "Skip Message"
+                or (node.nodeType == "Test Case Run" and node.result == "Skipped")
+            ]
+            ET.SubElement(case, "skipped", message="\n".join(messages))
+        elif status not in {"Passed", "Expected Failure"}:
+            failures = 1
+            messages = []
+            for node in _walk(run.node.children or []):
+                if node.nodeType != "Failure Message" and not (
+                    node.nodeType == "Test Case Run" and node.result == "Failed"
+                ):
+                    continue
+                message = node.name
+                if node.sourceLocation is not None:
+                    message += f" ({node.sourceLocation.filePath}:{node.sourceLocation.lineNumber})"
+                messages.append(message)
+            ET.SubElement(
+                case,
+                "failure",
+                message="\n".join(messages) or f"Test result: {status or 'unknown'}",
+            )
+        if failures:
+            attachments = self._attachment_paths(run, manifest)
+            if attachments:
+                output = ET.SubElement(case, "system-out")
+                output.text = ET.CDATA(
+                    "\n" + "\n".join(f"[[ATTACHMENT|{path}]]" for path in attachments) + "\n"
+                )
+        return failures, skipped
 
     def write(self) -> None:
-        """Get the test results."""
-
-        if self.export_attachments_path:
-            self.results.export_test_attachments(self.export_attachments_path)
-
+        """Write XML, with counts calculated from the testcases actually emitted."""
         root = ET.Element("testsuites")
+        runs: list[_Run] = []
+        manifest: list[TestAttachmentDetails] = []
+        if self.results.content_availability.hasTestResults:
+            if self.export_attachments_path is not None:
+                manifest = self.results.export_test_attachments(self.export_attachments_path)
+            for test, suite_name in self._tests(self.results.tests.testNodes):
+                identifier = test.nodeIdentifierURL or test.nodeIdentifier
+                if identifier is None:
+                    runs.append(_Run(test, test, suite_name, "", "", ()))
+                else:
+                    runs.extend(self._runs(test, suite_name, self.results.test_details(identifier)))
+        if self.collapse_retries:
+            runs = self._collapse(runs)
+        if self.test_filter is not None:
+            runs = [run for run in runs if self.test_filter(run.test)]
 
-        action_results = [r.actionResult for r in self.results.actions_invocation_record.actions]
-
-        test_refs = [ar.testsRef for ar in action_results if ar.testsRef is not None]
-        test_identifiers = [tr.id for tr in test_refs]
-
-        summaries = [
-            cast(
-                ActionTestPlanRunSummaries,
-                deserialize(self.results.get(test_identifier)),
-            )
-            for test_identifier in test_identifiers
-        ]
-
-        total_tests = 0
+        groups: dict[tuple[str, str, str], list[_Run]] = {}
+        for run in runs:
+            groups.setdefault((run.suite, run.configuration, run.device), []).append(run)
         total_failures = 0
         total_skipped = 0
-
-        for summary in summaries:
-            for run_summary in summary.summaries:
-                for testable_summary in run_summary.testableSummaries:
-                    test_count, failure_count, skipped_count = self.generate_test_suite(  # type: ignore[arg-type]
-                        root,
-                        testable_summary,
-                        run_summary.name or "Unknown Configuration",
-                    )
-                    total_tests += test_count
-                    total_failures += failure_count
-                    total_skipped += skipped_count
-
-        root.set("tests", str(total_tests))
+        for (name, configuration, device), group in groups.items():
+            suite = ET.SubElement(root, "testsuite", name=name)
+            suite.set("time", str(sum(_seconds(run.node) for run in group)))
+            properties = ET.SubElement(suite, "properties")
+            ET.SubElement(properties, "property", name="Configuration", value=configuration)
+            ET.SubElement(properties, "property", name="Device", value=device)
+            counts = [self._testcase(suite, run, manifest) for run in group]
+            failures = sum(count[0] for count in counts)
+            skipped = sum(count[1] for count in counts)
+            suite.set("tests", str(len(group)))
+            suite.set("failures", str(failures))
+            suite.set("skipped", str(skipped))
+            total_failures += failures
+            total_skipped += skipped
+        root.set("tests", str(len(runs)))
         root.set("failures", str(total_failures))
         root.set("skipped", str(total_skipped))
-
+        root.set("time", str(sum(_seconds(run.node) for run in runs)))
         tree = ET.ElementTree(root)
-
-        ET.indent(tree, space="    ", level=0)
-
-        with open(self.junit_path, "wb") as file:
-            tree.write(file, encoding="utf-8", xml_declaration=True)
+        ET.indent(tree, space="    ")
+        tree.write(self.junit_path, encoding="utf-8", xml_declaration=True)
