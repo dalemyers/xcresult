@@ -26,6 +26,14 @@ bundle = xcresult.Xcresults("/path/to/MyApp.xcresult")
 for error in bundle.build_results.errors:
     print(error.message, error.sourceURL)
 
+# Decode an issue's source URL into a file path and one-based coordinates
+for warning in bundle.build_results.warnings:
+    location = xcresult.parse_source_url(warning.sourceURL)
+    if location is None:
+        continue
+    print(location.path, location.starting_line_number, location.starting_column_number)
+    print(f"{location} -> {warning.message}")
+
 # Check availability before requesting test reports from build-only bundles
 if bundle.content_availability.hasTestResults:
     print(bundle.test_summary.failedTests)
@@ -47,6 +55,35 @@ bundle.write_junit("/path/to/results.junit")
 lazily and cached for the lifetime of the `Xcresults` instance. Test identifiers
 can be identifier strings or identifier URLs; prefer URLs when targets contain
 identically named tests. Apple field names retain their camelCase spelling.
+
+### Source locations
+
+Modern reports give each `Issue` a `sourceURL` string rather than a legacy
+location object, for example
+`file:///path/to/File.swift#StartingLineNumber=328&StartingColumnNumber=35`.
+`parse_source_url` decodes one into a frozen `source_url.SourceLocation`,
+returning `None` when the URL is absent, empty, or has no file path:
+
+| Attribute | Description |
+| --- | --- |
+| `path` | The percent-decoded file path |
+| `starting_line_number` | One-based line, or `None` if absent or unusable |
+| `starting_column_number` | One-based column, or `None` if absent or unusable |
+
+The coordinates in the URL fragment are zero based; they are converted to the
+one-based values editors and build logs report. Blank, negative, and
+non-integer values decode as `None` rather than raising. Converting a
+`SourceLocation` to a string appends whichever coordinates are available,
+stopping at the first missing one, giving `path`, `path:line`, or
+`path:line:column`. This is the format the `check-issues` subcommand prints.
+
+Note that `xcresult.SourceLocation` is a different, generated type: it is
+Apple's wire model for `TestNode.sourceLocation` (`filePath` and `lineNumber`).
+Import the decoded issue location from its module to keep the two apart:
+
+```python
+from xcresult.source_url import SourceLocation, parse_source_url
+```
 
 Attachments use xcresulttool's export layout: files and `manifest.json` in the
 output directory. The returned manifest identifies each test's files through
@@ -138,6 +175,7 @@ hierarchy now follow the modern reports.
 | `export_attachment(payload_id, type, path)` | `export_test_attachments(directory, test_id=...)` and its returned manifest |
 | `ActionTestMetadata` in test filters | `TestNode` (`name`, `nodeIdentifier`, `nodeIdentifierURL`, `result`) |
 | `deserialize(legacy_typed_json)` | `Tests.from_dict(json_data)` or `deserialize(json_data, Tests)` |
+| `issue.documentLocationInCreatingWorkspace` | `issue.sourceURL`, decoded with `parse_source_url` |
 
 Legacy `Action*`, `Reference`, and other internal object-graph models are no
 longer exported. Modern models are dataclasses with required constructor

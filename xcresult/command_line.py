@@ -9,7 +9,6 @@ import enum
 import os
 import sys
 from typing import Sequence
-from urllib.parse import parse_qs, unquote, urlparse
 
 try:
     import xcresult
@@ -72,23 +71,6 @@ def _handle_junit(args: argparse.Namespace) -> int:
     return 0
 
 
-def _source_location(source_url: str) -> str:
-    """Format a source URL with its available, one-based line and column."""
-    location = urlparse(source_url)
-    path = unquote(location.path)
-    fragment = parse_qs(location.fragment)
-    for key in ("StartingLineNumber", "StartingColumnNumber"):
-        value = fragment.get(key, [None])[0]
-        try:
-            number = int(value) if value is not None else -1
-        except ValueError:
-            break
-        if number < 0:
-            break
-        path += f":{number + 1}"
-    return path
-
-
 def _check_summary_type(
     summaries: Sequence[xcresult.Issue | xcresult.TestFailure] | None,
     summary_name: str,
@@ -107,8 +89,13 @@ def _check_summary_type(
 
     for summary in summaries:
         message = summary.message if isinstance(summary, xcresult.Issue) else summary.failureText
-        if isinstance(summary, xcresult.Issue) and (source_url := summary.sourceURL):
-            print(f"{_source_location(source_url)} -> {message}")
+        location = (
+            xcresult.parse_source_url(summary.sourceURL)
+            if isinstance(summary, xcresult.Issue)
+            else None
+        )
+        if location is not None:
+            print(f"{location} -> {message}")
         else:
             print(message)
 
